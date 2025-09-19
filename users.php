@@ -1,0 +1,220 @@
+<?php
+require_once 'components/functions.php';
+require_once 'database/db_connection.php';
+
+// Add User
+if (isset($_POST['add'])) {
+  $username = $_POST['username'];
+  $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+  $role = $_POST['role'];
+
+  $sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("sss", $username, $password, $role);
+  if ($stmt->execute()) {
+    log_action($conn, $_SESSION['user_id'], "Added user: $username (Role: $role)");
+  } else {
+    echo "<p style='color:red;'>Error adding user: " . $stmt->error . "</p>";
+  }
+  $stmt->close();
+}
+
+// Edit User
+if (isset($_POST['edit'])) {
+  $id = $_POST['id'];
+  $username = $_POST['username'];
+  $role = $_POST['role'];
+  $password_update = "";
+  if (!empty($_POST['password'])) {
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $password_update = ", password=?";
+  }
+
+  $sql = "UPDATE users SET username=?, role=? $password_update WHERE id=?";
+  $stmt = $conn->prepare($sql);
+  if (!empty($_POST['password'])) {
+    $stmt->bind_param("sssi", $username, $role, $password, $id);
+  } else {
+    $stmt->bind_param("ssi", $username, $role, $id);
+  }
+
+  if ($stmt->execute()) {
+    log_action($conn, $_SESSION['user_id'], "Edited user: $username (ID: $id)");
+  } else {
+    echo "<p style='color:red;'>Error editing user: " . $stmt->error . "</p>";
+  }
+  $stmt->close();
+}
+
+// Delete User
+if (isset($_GET['delete'])) {
+  $id = $_GET['delete'];
+  $sql_select = "SELECT username FROM users WHERE id=$id";
+  $result_select = $conn->query($sql_select);
+  $user_data = $result_select->fetch_assoc();
+  $username = $user_data ? $user_data['username'] : 'Unknown User';
+
+  $sql = "DELETE FROM users WHERE id=$id";
+  if ($conn->query($sql) === TRUE) {
+    log_action($conn, $_SESSION['user_id'], "Deleted user: $username (ID: $id)");
+  }
+}
+
+// Fetch Users
+$sql = "SELECT * FROM users where role != 'Superuser'";
+$result = $conn->query($sql);
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<?php include('components/head.php'); ?>
+
+<body>
+  <div class="wrapper">
+    <!-- Sidebar -->
+    <?php include('components/sidebar.php'); ?>
+    <!-- End Sidebar -->
+
+    <div class="main-panel">
+      <?php include('components/navbar.php'); ?>
+
+      <div class="container">
+        <div class="px-3 mt-3">
+          <div class="page-header">
+            <!-- breadcrumbs -->
+            <ul class="breadcrumbs mb-3">
+              <li class="nav-home">
+                <a href="index.php">
+                  <i class="icon-home"></i>
+                </a>
+              </li>
+              <li class="separator">
+                <i class="icon-arrow-right"></i>
+              </li>
+              <li class="nav-item">
+                <a href="#">Users</a>
+              </li>
+
+            </ul>
+          </div>
+
+          <!-- new user  -->
+          <div class="card p-3">
+            <div class="card-header">
+            <h2>Add New User</h2>
+            </div>
+            <div class="card-body">
+            <form action="users.php" method="post">
+              <div class="row">
+                <div class="col-md-3 mb-3">
+                  <input type="text" class="form-control" name="username" placeholder="Username" required>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <input type="password" class="form-control" name="password" placeholder="Password" required>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <select name="role" class="form-control form-select" required>
+                    <option selected disabled value="">Select Role</option>
+                    <option value="admin">Admin</option>
+                    <option value="pharmacist">Pharmacist</option>
+                    <option value="assistant">Assistant</option>
+                    <option value="cashier">Cashier</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
+                </div>
+              </div>
+            </form>
+            </div>
+          </div>
+
+          <!-- existing users  -->
+          <div class="card p-3">
+            <div class="card-header">
+            <h2>Existing Users</h2>
+            </div>
+            <div class="card-body">
+            <div class="table-responsive">
+              <table id="basic-datatables" class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                  <tbody>
+                    <tr>
+                      <td><?php echo $row['id']; ?></td>
+                      <td><?php echo $row['username']; ?></td>
+                      <td><?php echo $row['role']; ?></td>
+                      <td>
+                        <a href="users.php?edit_id=<?php echo $row['id']; ?>" class="btn btn-primary btn-icon btn-round mb-3"><i class="fas fa-edit"></i></a> 
+                        <a href="users.php?delete=<?php echo $row['id']; ?>"class="btn btn-danger btn-icon btn-round mb-3"><i class="fas fa-trash"></i></a>
+                      </td>
+                    </tr>
+                  </tbody>
+                <?php endwhile; ?>
+              </table>
+            </div>
+            </div>
+          </div>
+
+          <!-- edit users  -->
+          <?php
+          // Edit form
+          if (isset($_GET['edit_id'])) {
+            $edit_id = $_GET['edit_id'];
+            $sql = "SELECT * FROM users WHERE id=$edit_id";
+            $edit_result = $conn->query($sql);
+            $edit_user = $edit_result->fetch_assoc();
+            if ($edit_user) {
+          ?>
+              <div class="card p-3">
+                <div class="card-header">
+                <h2>Edit User</h2>
+                </div>
+                <div class="card-body">
+                <form action="users.php" method="post">
+                  <div class="row">
+                  <input type="hidden" name="id" value="<?php echo $edit_user['id']; ?>">
+                  <div class="col-md-3 mb-3">
+                  <input type="text" class="form-control" name="username" placeholder="Username" value="<?php echo $edit_user['username']; ?>" required>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                  <input type="password" class="form-control" name="password" placeholder="New Password (leave blank to keep current)">
+                  </div>
+                  <div class="col-md-3 mb-3">
+                  <select name="role" class="form-control" required>
+                    <option value="">Select Role</option>
+                    <option value="admin" <?php echo ($edit_user['role'] == 'admin') ? 'selected' : ''; ?>>Admin</option>
+                    <option value="pharmacist" <?php echo ($edit_user['role'] == 'pharmacist') ? 'selected' : ''; ?>>Pharmacist</option>
+                    <option value="assistant" <?php echo ($edit_user['role'] == 'assistant') ? 'selected' : ''; ?>>Assistant</option>
+                    <option value="cashier" <?php echo ($edit_user['role'] == 'cashier') ? 'selected' : ''; ?>>Cashier</option>
+                  </select>
+                  </div>
+                  <div class="col-md-3">
+                  <button type="submit" name="edit" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
+                  </div>
+                  </div>
+                </form>
+                </div>
+              </div>
+          <?php
+            }
+          }
+          ?>
+        </div>
+      </div>
+
+      <?php include('components/footer.php'); ?>
+    </div>
+  </div>
+  <!--   Core JS Files   -->
+  <?php include('components/script.php'); ?>
+</body>
+
+</html>
