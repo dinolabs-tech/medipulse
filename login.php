@@ -1,6 +1,7 @@
 <?php
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
+require_once 'database/database_schema.php';
 include_once 'secure_session.php'; // Include the secure session
 
 if (isset($_POST['login'])) {

@@ -1,6 +1,28 @@
 <?php
-// Define the database schema using table arrays
+// Include DB connection
+require_once 'database/db_connection.php';
 
+// Function to create a table
+function createTable($conn, $tableName, $columns)
+{
+    // Build columns into SQL
+    $columns_sql = [];
+    foreach ($columns as $name => $definition) {
+        $columns_sql[] = "`$name` $definition";
+    }
+    $sql = "CREATE TABLE IF NOT EXISTS `$tableName` (" . implode(", ", $columns_sql) . ") ENGINE=InnoDB";
+
+    if ($conn->query($sql) === TRUE) {
+        // echo "✅ Table '$tableName' created successfully.<br>";
+        return true;
+    } else {
+        echo "❌ Error creating table '$tableName': " . $conn->error . "<br>";
+        error_log("Error creating table '$tableName': " . $conn->error);
+        return false;
+    }
+}
+
+// Database schema
 $schema = [
     'users' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -90,4 +112,10 @@ $schema = [
         'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ]
 ];
+
+// Execute table creation
+foreach ($schema as $tableName => $columns) {
+    createTable($conn, $tableName, $columns);
+}
+
 ?>
