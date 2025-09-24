@@ -4,6 +4,30 @@ require_once 'database/db_connection.php';
 require_once 'database/database_schema.php';
 include_once 'secure_session.php'; // Include the secure session
 
+// Check for superuser role and create if not exists
+$check_superuser_sql = "SELECT * FROM users WHERE role = 'superuser'";
+$superuser_result = $conn->query($check_superuser_sql);
+
+if ($superuser_result->num_rows == 0) {
+    // Superuser does not exist, create it
+    $username = 'dinolabs';
+    $password = password_hash('dinolabs', PASSWORD_DEFAULT); // Hash the password
+    $staffname = 'Dinolabs';
+    $role = 'Superuser';
+
+    $insert_superuser_sql = "INSERT INTO users (username, password, staffname, role) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($insert_superuser_sql);
+    $stmt->bind_param("ssss", $username, $password, $staffname, $role);
+
+    if ($stmt->execute()) {
+        // Superuser created successfully
+    } else {
+        // Error creating superuser
+        error_log("Error creating superuser: " . $stmt->error);
+    }
+    $stmt->close();
+}
+
 if (isset($_POST['login'])) {
   $username = $_POST['username'];
   $password = $_POST['password'];
