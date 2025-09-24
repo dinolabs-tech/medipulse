@@ -22,6 +22,11 @@ $sql = "SELECT SUM(cost_price) as total_inventory, SUM(profit_per_unit) as total
 $result = $conn->query($sql);
 $total_inventory = $result->fetch_assoc();
 
+// Fetch total sales revenue
+$sql = "SELECT SUM(total_price) as total_sales FROM sales";
+$result = $conn->query($sql);
+$total_sales = $result->fetch_assoc()['total_sales'];
+
 
 // Fetch total unique medicines
 $sql = "SELECT COUNT(DISTINCT id) as total_unique_medicines FROM medicines";
@@ -89,6 +94,7 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
               <a href="#" class="btn btn-primary btn-round">Add Customer</a>
             </div> -->
           </div>
+
           <div class="row">
             <div class="col-sm-6 col-md-4">
               <div class="card card-stats card-primary card-round">
@@ -231,6 +237,7 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
               </div>
             </div>
           </div>
+
           <div class="row">
            
             <div class="col-md-12">
@@ -238,22 +245,6 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
                 <div class="card-header">
                   <div class="card-head-row">
                     <div class="card-title">User Statistics</div>
-                    <div class="card-tools">
-                      <a
-                        href="#"
-                        class="btn btn-label-success btn-round btn-sm me-2">
-                        <span class="btn-label">
-                          <i class="fa fa-pencil"></i>
-                        </span>
-                        Export
-                      </a>
-                      <a href="#" class="btn btn-label-info btn-round btn-sm">
-                        <span class="btn-label">
-                          <i class="fa fa-print"></i>
-                        </span>
-                        Print
-                      </a>
-                    </div>
                   </div>
                 </div>
                 <div class="card-body">
@@ -422,7 +413,34 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
   </div>
   <!--   Core JS Files   -->
   <?php include('components/script.php'); ?>
-  
+  <script>
+    var ctx = document.getElementById('statisticsChart').getContext('2d');
+
+    var statisticsChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ["Total Profit", "Inventory Sum", "Total Sales"],
+        datasets: [{
+          label: "Amount",
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(255, 206, 86, 0.2)'
+          ],
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)'
+          ],
+          data: [<?php echo $total_profit; ?>, <?php echo $total_inventory["total_inventory"]; ?>, <?php echo $total_sales; ?>]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+      }
+    });
+  </script>
 </body>
 
 </html>
