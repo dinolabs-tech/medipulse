@@ -99,7 +99,7 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Superuser') {
     </div>
   </div>
   <!--   Core JS Files   -->
-  <?php include('components/script.php'); ?>
+  
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
@@ -188,6 +188,7 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Superuser') {
       });
     });
   </script>
+  <?php include('components/script.php'); ?>
 </body>
 
 </html>
