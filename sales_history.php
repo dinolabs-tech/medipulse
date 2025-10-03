@@ -119,7 +119,7 @@ $sales_history_result = $conn->query($sql);
                           <td><?php echo $row['first_name'] ? $row['first_name'] . ' ' . $row['last_name'] : 'N/A'; ?></td>
                           <td><?php echo $row['medicine_name']; ?></td>
                           <td><?php echo $row['quantity_sold']; ?></td>
-                          <td>$<?php echo number_format($row['total_price'], 2); ?></td>
+                          <td>&#8358; <?php echo number_format($row['total_price'], 2); ?></td>
                           <td><?php echo $row['sale_date']; ?></td>
                           <td><a href="sales_history.php?reprint_invoice=<?php echo $row['invoice_number']; ?>" class="btn btn-primary btn-icon btn-round" target="_blank"><i class="fas fa-file-alt"></i></a></td>
                         </tr>

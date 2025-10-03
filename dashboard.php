@@ -109,7 +109,7 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
                     <div class="col col-stats ms-3 ms-sm-0">
                       <div class="numbers">
                         <p class="card-category">Inventory Sum</p>
-                        <h4 class="card-title">$<?php echo number_format($total_inventory['total_inventory'], 2); ?></h4>
+                        <h4 class="card-title">&#8358; <?php echo number_format($total_inventory['total_inventory'], 2); ?></h4>
                       </div>
                     </div>
                   </div>
@@ -129,7 +129,7 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
                     <div class="col col-stats ms-3 ms-sm-0">
                       <div class="numbers">
                         <p class="card-category">Total Profit</p>
-                        <h4 class="card-title">$<?php echo number_format($total_profit, 2); ?></h4>
+                        <h4 class="card-title">&#8358; <?php echo number_format($total_profit, 2); ?></h4>
                       </div>
                     </div>
                   </div>
@@ -149,7 +149,7 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
                     <div class="col col-stats ms-3 ms-sm-0">
                       <div class="numbers">
                         <p class="card-category">Expected Profit</p>
-                        <h4 class="card-title">$<?php echo number_format($total_inventory['total_profit'], 2); ?></h4>
+                        <h4 class="card-title">&#8358; <?php echo number_format($total_inventory['total_profit'], 2); ?></h4>
                       </div>
                     </div>
                   </div>
@@ -345,14 +345,16 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
                           <th>Expiry Date</th>
                         </tr>
                         </thead>
-                        <?php while ($row = $about_to_expire_products->fetch_assoc()): ?>
+                        
                           <tbody>
+                            <?php while ($row = $about_to_expire_products->fetch_assoc()): ?>
                           <tr>
                             <td><?php echo $row['name']; ?></td>
                             <td><?php echo $row['expiry_date']; ?></td>
                           </tr>
+                          <?php endwhile; ?>
                           </tbody>
-                        <?php endwhile; ?>
+                        
                       </table>
                       </div>
                     <?php else: ?>
@@ -392,8 +394,8 @@ $about_to_expire_products = $conn->query($sql_about_to_expire);
                             <td><?php echo $row['first_name'] . ' ' . $row['last_name']; ?></td>
                             <td><?php echo $row['medicine_name']; ?></td>
                             <td><?php echo $row['quantity_sold']; ?></td>
-                            <td>$<?php echo number_format($row['total_price'], 2); ?></td>
-                            <td>$<?php echo number_format($row['profit'], 2); ?></td>
+                            <td>&#8358; <?php echo number_format($row['total_price'], 2); ?></td>
+                            <td>&#8358; <?php echo number_format($row['profit'], 2); ?></td>
                             <td><?php echo $row['sale_date']; ?></td>
                             <td><?php echo $row['cashier_name']; ?></td>
                           </tr>

@@ -150,6 +150,17 @@ if (!isset($_SESSION['user_id'])) {
             <p>Profile</p>
           </a>
         </li>
+
+        <!-- Superuser and Admin only -->
+        <?php if ($_SESSION['role'] == 'Superuser' || $_SESSION['role'] == 'admin') { ?>
+          <li class="nav-item">
+            <a href="documentation/index.php">
+              <i class="fas fa-book"></i>
+              <p>Documentation</p>
+            </a>
+          </li>
+        <?php } ?>
+        
         <li class="nav-item">
           <a href="logout.php">
             <i class="fas fa-arrow-right"></i>

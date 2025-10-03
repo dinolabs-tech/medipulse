@@ -215,8 +215,9 @@ $suppliers_result = $conn->query($sql);
                       <th>Action</th>
                     </tr>
                   </thead>
-                  <?php while ($row = $po_result->fetch_assoc()): ?>
+                  
                     <tbody>
+                      <?php while ($row = $po_result->fetch_assoc()): ?>
                       <tr>
                         <td><?php echo $row['id']; ?></td>
                         <td><?php echo $row['supplier_name']; ?></td>
@@ -230,8 +231,9 @@ $suppliers_result = $conn->query($sql);
                           <a href="purchase_orders.php?delete=<?php echo $row['id']; ?>" class="btn btn-danger btn-icon btn-round mb-3"><i class="fas fa-trash"></i></a>
                         </td>
                       </tr>
+                       <?php endwhile; ?>
                       </thead>
-                    <?php endwhile; ?>
+                   
                 </table>
               </div>
             </div>

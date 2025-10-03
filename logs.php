@@ -55,16 +55,18 @@ $logs_result = $conn->query($sql);
                       <th>Date</th>
                     </tr>
                   </thead>
-                  <?php while ($row = $logs_result->fetch_assoc()): ?>
+                 
                     <tbody>
+                       <?php while ($row = $logs_result->fetch_assoc()): ?>
                       <tr>
                         <td><?php echo $row['id']; ?></td>
                         <td><?php echo $row['username']; ?></td>
                         <td><?php echo $row['action']; ?></td>
                         <td><?php echo $row['action_date']; ?></td>
                       </tr>
+                      <?php endwhile; ?>
                     </tbody>
-                  <?php endwhile; ?>
+                  
                 </table>
               </div>
             </div>

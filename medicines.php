@@ -178,8 +178,9 @@ $result = $conn->query($sql);
                       <th>Action</th>
                     </tr>
                   </thead>
-                  <?php while ($row = $result->fetch_assoc()): ?>
+                 
                     <tbody>
+                       <?php while ($row = $result->fetch_assoc()): ?>
                       <tr>
                         <td><?php echo $row['id']; ?></td>
                         <td><?php echo $row['name']; ?></td>
@@ -195,8 +196,9 @@ $result = $conn->query($sql);
                           <a href="medicines.php?delete=<?php echo $row['id']; ?>" class="btn btn-danger btn-icon btn-round mb-3"><i class="fas fa-trash"></i></a>
                         </td>
                       </tr>
+                      <?php endwhile; ?>
                     </tbody>
-                  <?php endwhile; ?>
+                  
                 </table>
               </div>
             </div>
