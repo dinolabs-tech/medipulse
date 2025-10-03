@@ -89,13 +89,13 @@ session_start();
                 <?php if (isset($_SESSION['role'])) { ?>
                     <?php if ($_SESSION['role'] == 'Superuser') { ?>
                         <li class="open"><a href="../dashboard.php"><i class="zmdi zmdi-home"></i><span>Back to Dashboard</span></a></li>
-                    <?php } elseif ($_SESSION['role'] == 'Admin') { ?>
+                    <?php } elseif ($_SESSION['role'] == 'admin') { ?>
                         <li class="open"><a href="../dashboard.php"><i class="zmdi zmdi-home"></i><span>Back to Dashboard</span></a></li>
-                    <?php } elseif ($_SESSION['role'] == 'Pharmacist') { ?>
+                    <?php } elseif ($_SESSION['role'] == 'pharmacist') { ?>
                         <li class="open"><a href="../dashboard.php"><i class="zmdi zmdi-home"></i><span>Back to Dashboard</span></a></li>
-                    <?php } elseif ($_SESSION['role'] == 'Assistant') { ?>
+                    <?php } elseif ($_SESSION['role'] == 'assistant') { ?>
                         <li class="open"><a href="../dashboard.php"><i class="zmdi zmdi-home"></i><span>Back to Dashboard</span></a></li>
-                    <?php } elseif ($_SESSION['role'] == 'Cashier') { ?>
+                    <?php } elseif ($_SESSION['role'] == 'cashier') { ?>
                         <li class="open"><a href="../dashboard.php"><i class="zmdi zmdi-home"></i><span>Back to Dashboard</span></a></li>
                     <?php } ?>
                 <?php } else { ?>
