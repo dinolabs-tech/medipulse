@@ -327,7 +327,7 @@ session_start();
                         <p class="lead mt-2">After successful login, users are redirected to the landing page, which serves as a general welcome and landing page. This page displays the user's current role and provides a prompt to select a section from the navigation sidebar.</p>
                         <h4>Key Features:</h4>
                         <ul>
-                            <li><strong>Role Display:</strong> Clearly shows the logged-in user's role (e.g., Superuser, Admin, Pharmacist).</li>
+                            <li><strong>Role Display:</strong> Clearly shows the logged-in user's role (e.g. Admin, Pharmacist).</li>
                             <li><strong>Navigation Prompt:</strong> Guides users to utilize the sidebar for accessing different modules and functionalities based on their permissions.</li>
                             <li><strong>Sidebar Integration:</strong> The sidebar is dynamically loaded, presenting navigation options tailored to the user's role.</li>
                         </ul>
