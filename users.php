@@ -101,67 +101,67 @@ $result = $conn->query($sql);
           <!-- new user  -->
           <div class="card p-3">
             <div class="card-header">
-            <h2>Add New User</h2>
+              <h2>Add New User</h2>
             </div>
             <div class="card-body">
-            <form action="users.php" method="post">
-              <div class="row">
-                <div class="col-md-3 mb-3">
-                  <input type="text" class="form-control" name="username" placeholder="Username" required>
+              <form action="users.php" method="post">
+                <div class="row">
+                  <div class="col-md-3 mb-3">
+                    <input type="text" class="form-control" name="username" placeholder="Username" required>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <input type="password" class="form-control" name="password" placeholder="Password" required>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <select name="role" class="form-control form-select" required>
+                      <option selected disabled value="">Select Role</option>
+                      <option value="admin">Admin</option>
+                      <option value="pharmacist">Pharmacist</option>
+                      <option value="assistant">Assistant</option>
+                      <option value="cashier">Cashier</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
+                  </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                  <input type="password" class="form-control" name="password" placeholder="Password" required>
-                </div>
-                <div class="col-md-3 mb-3">
-                  <select name="role" class="form-control form-select" required>
-                    <option selected disabled value="">Select Role</option>
-                    <option value="admin">Admin</option>
-                    <option value="pharmacist">Pharmacist</option>
-                    <option value="assistant">Assistant</option>
-                    <option value="cashier">Cashier</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
-                </div>
-              </div>
-            </form>
+              </form>
             </div>
           </div>
 
           <!-- existing users  -->
           <div class="card p-3">
             <div class="card-header">
-            <h2>Existing Users</h2>
+              <h2>Existing Users</h2>
             </div>
             <div class="card-body">
-            <div class="table-responsive">
-              <table id="basic-datatables" class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-               
-                  <tbody>
-                     <?php while ($row = $result->fetch_assoc()): ?>
+              <div class="table-responsive">
+                <table id="basic-datatables" class="table table-bordered table-striped">
+                  <thead>
                     <tr>
-                      <td><?php echo $row['id']; ?></td>
-                      <td><?php echo $row['username']; ?></td>
-                      <td><?php echo $row['role']; ?></td>
-                      <td>
-                        <a href="users.php?edit_id=<?php echo $row['id']; ?>" class="btn btn-primary btn-icon btn-round mb-3"><i class="fas fa-edit"></i></a> 
-                        <a href="users.php?delete=<?php echo $row['id']; ?>"class="btn btn-danger btn-icon btn-round mb-3"><i class="fas fa-trash"></i></a>
-                      </td>
+                      <th>ID</th>
+                      <th>Username</th>
+                      <th>Role</th>
+                      <th>Action</th>
                     </tr>
-                     <?php endwhile; ?>
+                  </thead>
+
+                  <tbody>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                      <tr>
+                        <td><?php echo $row['id']; ?></td>
+                        <td><?php echo $row['username']; ?></td>
+                        <td><?php echo $row['role']; ?></td>
+                        <td class="d-flex">
+                          <a href="users.php?edit_id=<?php echo $row['id']; ?>" class="btn btn-primary btn-icon btn-round mx-2"><i class="fas fa-edit"></i></a>
+                          <a href="users.php?delete=<?php echo $row['id']; ?>" class="btn btn-danger btn-icon btn-round mb-3"><i class="fas fa-trash"></i></a>
+                        </td>
+                      </tr>
+                    <?php endwhile; ?>
                   </tbody>
-               
-              </table>
-            </div>
+
+                </table>
+              </div>
             </div>
           </div>
 
@@ -177,32 +177,32 @@ $result = $conn->query($sql);
           ?>
               <div class="card p-3">
                 <div class="card-header">
-                <h2>Edit User</h2>
+                  <h2>Edit User</h2>
                 </div>
                 <div class="card-body">
-                <form action="users.php" method="post">
-                  <div class="row">
-                  <input type="hidden" name="id" value="<?php echo $edit_user['id']; ?>">
-                  <div class="col-md-3 mb-3">
-                  <input type="text" class="form-control" name="username" placeholder="Username" value="<?php echo $edit_user['username']; ?>" required>
-                  </div>
-                  <div class="col-md-3 mb-3">
-                  <input type="password" class="form-control" name="password" placeholder="New Password (leave blank to keep current)">
-                  </div>
-                  <div class="col-md-3 mb-3">
-                  <select name="role" class="form-control" required>
-                    <option value="">Select Role</option>
-                    <option value="admin" <?php echo ($edit_user['role'] == 'admin') ? 'selected' : ''; ?>>Admin</option>
-                    <option value="pharmacist" <?php echo ($edit_user['role'] == 'pharmacist') ? 'selected' : ''; ?>>Pharmacist</option>
-                    <option value="assistant" <?php echo ($edit_user['role'] == 'assistant') ? 'selected' : ''; ?>>Assistant</option>
-                    <option value="cashier" <?php echo ($edit_user['role'] == 'cashier') ? 'selected' : ''; ?>>Cashier</option>
-                  </select>
-                  </div>
-                  <div class="col-md-3">
-                  <button type="submit" name="edit" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
-                  </div>
-                  </div>
-                </form>
+                  <form action="users.php" method="post">
+                    <div class="row">
+                      <input type="hidden" name="id" value="<?php echo $edit_user['id']; ?>">
+                      <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control" name="username" placeholder="Username" value="<?php echo $edit_user['username']; ?>" required>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <input type="password" class="form-control" name="password" placeholder="New Password (leave blank to keep current)">
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <select name="role" class="form-control" required>
+                          <option value="">Select Role</option>
+                          <option value="admin" <?php echo ($edit_user['role'] == 'admin') ? 'selected' : ''; ?>>Admin</option>
+                          <option value="pharmacist" <?php echo ($edit_user['role'] == 'pharmacist') ? 'selected' : ''; ?>>Pharmacist</option>
+                          <option value="assistant" <?php echo ($edit_user['role'] == 'assistant') ? 'selected' : ''; ?>>Assistant</option>
+                          <option value="cashier" <?php echo ($edit_user['role'] == 'cashier') ? 'selected' : ''; ?>>Cashier</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <button type="submit" name="edit" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
+                      </div>
+                    </div>
+                  </form>
                 </div>
               </div>
           <?php
