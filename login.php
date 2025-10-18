@@ -76,7 +76,7 @@ if (isset($_POST['login'])) {
           <form action="login.php" method="post">
             <input type="text" class="form-control mb-3" name="username" placeholder="Username" required>
             <input type="password" class="form-control mb-3" name="password" placeholder="Password" required>
-            <button type="submit" class="btn btn-primary rounded" name="login">Login</button>
+            <button type="submit" class="btn btn-primary rounded text-center" name="login">Login</button>
           </form>
           </div>
         </div>
