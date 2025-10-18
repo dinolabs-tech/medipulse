@@ -70,7 +70,7 @@ if (isset($_POST['login'])) {
       <div class="col-lg-4 col-md-6 d-flex flex-column align-items-center justify-content-center">
         <div class="card w-100">
           <div class="card-header">
-            <h3>Loginaa</h3>
+            <h3 class="text-center">Login</h3>
           </div>
           <div class="card-body">
           <form action="login.php" method="post">
