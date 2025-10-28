@@ -26,6 +26,20 @@ if (!isset($_SESSION['user_id'])) {
           <div class="card p-3">
             <div class="card-header">
               <p>Your role: <?= $_SESSION['role']; ?></p>
+              <?php if (isset($_SESSION['branch_id'])) : ?>
+                <?php
+                require_once 'database/db_connection.php';
+                $branch_id = $_SESSION['branch_id'];
+                $sql = "SELECT name FROM branches WHERE id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("i", $branch_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $branch_name = $result->fetch_assoc()['name'] ?? 'N/A';
+                $stmt->close();
+                ?>
+                <p>Current Branch: <?= $branch_name; ?></p>
+              <?php endif; ?>
             </div>
             <div class="card-body">
               <h2>Welcome to the Pharmacy Management System</h2>
@@ -43,3 +57,4 @@ if (!isset($_SESSION['user_id'])) {
 </body>
 
 </html>
+<?php include 'backup.php'; ?>

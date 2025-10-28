@@ -120,6 +120,12 @@ if (!isset($_SESSION['user_id'])) {
         <!-- Admin only -->
         <?php if ($_SESSION['role'] == 'Superuser' || $_SESSION['role'] == 'admin') { ?>
           <li class="nav-item">
+            <a href="branches.php">
+              <i class="fas fa-code-branch"></i>
+              <p>Branches</p>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="users.php">
               <i class="fas fa-users"></i>
               <p>Users</p>

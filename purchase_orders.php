@@ -23,15 +23,16 @@ if (isset($_POST['add'])) {
   $product_id = isset($_POST['product_id']) && $_POST['product_id'] !== '' ? $_POST['product_id'] : null;
   $status = $_POST['status'];
   $total_amount = $_POST['total_amount'];
+  $branch_id = $_SESSION['branch_id'] ?? null;
 
   if ($product_id) {
-    $sql = "INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, product_id, status, total_amount) VALUES (?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, product_id, status, total_amount, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("issssd", $supplier_id, $order_date, $expected_delivery_date, $product_id, $status, $total_amount);
+    $stmt->bind_param("isssdsi", $supplier_id, $order_date, $expected_delivery_date, $product_id, $status, $total_amount, $branch_id);
   } else {
-    $sql = "INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, status, total_amount) VALUES (?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, status, total_amount, branch_id) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("isssd", $supplier_id, $order_date, $expected_delivery_date, $status, $total_amount);
+    $stmt->bind_param("isssdi", $supplier_id, $order_date, $expected_delivery_date, $status, $total_amount, $branch_id);
   }
 
   if ($stmt->execute()) {
@@ -87,12 +88,32 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch Purchase Orders
-$sql = "SELECT po.*, s.name as supplier_name, m.name as product_name FROM purchase_orders po JOIN suppliers s ON po.supplier_id = s.id LEFT JOIN medicines m ON po.product_id = m.id ORDER BY po.order_date DESC";
-$po_result = $conn->query($sql);
+$branch_id = $_SESSION['branch_id'] ?? null;
+$sql = "SELECT po.*, s.name as supplier_name, m.name as product_name FROM purchase_orders po JOIN suppliers s ON po.supplier_id = s.id LEFT JOIN medicines m ON po.product_id = m.id";
+if ($branch_id !== null) {
+    $sql .= " WHERE po.branch_id = ?";
+}
+$sql .= " ORDER BY po.order_date DESC";
+$stmt = $conn->prepare($sql);
+if ($branch_id !== null) {
+    $stmt->bind_param("i", $branch_id);
+}
+$stmt->execute();
+$po_result = $stmt->get_result();
+$stmt->close();
 
 // Fetch Suppliers for dropdown
 $sql = "SELECT id, name FROM suppliers";
-$suppliers_result = $conn->query($sql);
+if ($branch_id !== null) {
+    $sql .= " WHERE branch_id = ?";
+}
+$stmt = $conn->prepare($sql);
+if ($branch_id !== null) {
+    $stmt->bind_param("i", $branch_id);
+}
+$stmt->execute();
+$suppliers_result = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

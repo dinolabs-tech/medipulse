@@ -19,11 +19,12 @@ function secure_session_start($conn, $timeout = 3600, $regen_interval = 1800) {
     $ip   = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $ua   = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
     $uid  = $_SESSION['user_id'] ?? null;
+    $branch_id = $_SESSION['branch_id'] ?? null;
 
     // Helper for logging events
-    $log_event = function($type) use ($conn, $uid, $ip, $ua) {
-        $stmt = $conn->prepare("INSERT INTO session_logs (user_id, event_type, ip_address, user_agent) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("isss", $uid, $type, $ip, $ua);
+    $log_event = function($type) use ($conn, $uid, $branch_id, $ip, $ua) {
+        $stmt = $conn->prepare("INSERT INTO session_logs (user_id, branch_id, event_type, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("iisss", $uid, $branch_id, $type, $ip, $ua);
         $stmt->execute();
         $stmt->close();
     };
