@@ -133,16 +133,6 @@ if (!isset($_SESSION['user_id'])) {
           </li>
         <?php } ?>
 
-        <!-- Superuser only -->
-        <?php if ($_SESSION['role'] == 'Superuser') { ?>
-          <li class="nav-item">
-            <a href="session_logs.php">
-              <i class="fas fa-desktop"></i>
-              <p>Session Logs</p>
-            </a>
-          </li>
-        <?php } ?>
-
         <!-- Always visible -->
         <li class="nav-item">
           <a href="profile.php">

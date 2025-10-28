@@ -2,7 +2,7 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 require_once 'database/database_schema.php';
-include_once 'secure_session.php'; // Include the secure session
+
 
 // Check for superuser role and create if not exists
 $check_superuser_sql = "SELECT * FROM users WHERE role = 'superuser'";
@@ -45,7 +45,6 @@ if (isset($_POST['login'])) {
 
       // Regenerate session ID for security
       // Log login
-      $log_event = secure_session_start($conn);
       $log_event('login');
 
       header("Location: index.php");
