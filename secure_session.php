@@ -1,6 +1,6 @@
 <?php
 function secure_session_start($conn, $timeout = 3600, $regen_interval = 1800) {
-    // Cookie settings (looser)
+    // Cookie settings (looser) - Must be called before session_start()
     $cookieParams = session_get_cookie_params();
     session_set_cookie_params([
         'lifetime' => 0,

@@ -7,6 +7,9 @@ require_once 'database/db_connection.php';
 require_once 'database/database_schema.php';
 include_once 'secure_session.php'; // Include the secure session
 
+// Start secure session and get the logging function
+$log_event = secure_session_start($conn);
+
 // Check for superuser role and create if not exists
 $check_superuser_sql = "SELECT * FROM users WHERE role = 'Superuser'";
 $superuser_result = $conn->query($check_superuser_sql);
@@ -134,7 +137,7 @@ if (isset($_POST['login'])) {
                   <input type="text" class="form-control mb-3" name="username" placeholder="Username" required>
                   <input type="password" class="form-control mb-3" name="password" placeholder="Password" required>
                   <select class="form-control mb-3" name="branch_id" id="branchSelect">
-                    <option value="">Select Branch (Optional for Superuser)</option>
+                    <option value="">Select Branch</option>
                     <?php foreach ($branches as $branch) : ?>
                       <option value="<?php echo $branch['id']; ?>"><?php echo $branch['name']; ?></option>
                     <?php endforeach; ?>
