@@ -24,24 +24,12 @@ function createTable($conn, $tableName, $columns)
 
 // Database schema
 $schema = [
-    'branches' => [
-        'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
-        'name' => 'VARCHAR(255) NOT NULL',
-        'address' => 'TEXT',
-        'city' => 'VARCHAR(100)',
-        'state' => 'VARCHAR(100)',
-        'country' => 'VARCHAR(100)',
-        'phone' => 'VARCHAR(20)',
-        'email' => 'VARCHAR(100)',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-    ],
     'users' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
         'staffname' => 'VARCHAR(255) NOT NULL',
         'username' => 'VARCHAR(50) NOT NULL UNIQUE',
         'password' => 'VARCHAR(255) NOT NULL',
         'role' => 'VARCHAR(50) NOT NULL',
-        'branch_id' => 'INT(6) UNSIGNED',
         'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'patients' => [
@@ -53,10 +41,6 @@ $schema = [
         'phone' => 'VARCHAR(20)',
         'email' => 'VARCHAR(100)',
         'address' => 'TEXT',
-        'city' => 'VARCHAR(100)',
-        'state' => 'VARCHAR(100)',
-        'country' => 'VARCHAR(100)',
-        'branch_id' => 'INT(6) UNSIGNED',
         'insurance_details' => 'TEXT',
         'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
@@ -70,7 +54,6 @@ $schema = [
         'profit_per_unit' => 'DECIMAL(10, 2) NOT NULL',
         'batch_number' => 'VARCHAR(100)',
         'expiry_date' => 'DATE',
-        'branch_id' => 'INT(6) UNSIGNED',
         'added_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'suppliers' => [
@@ -80,10 +63,6 @@ $schema = [
         'phone' => 'VARCHAR(20)',
         'email' => 'VARCHAR(100)',
         'address' => 'TEXT',
-        'city' => 'VARCHAR(100)',
-        'state' => 'VARCHAR(100)',
-        'country' => 'VARCHAR(100)',
-        'branch_id' => 'INT(6) UNSIGNED',
         'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'sales' => [
@@ -95,7 +74,6 @@ $schema = [
         'total_price' => 'DECIMAL(10, 2) NOT NULL',
         'profit' => 'DECIMAL(10, 2) NOT NULL',
         'user_id' => 'INT(6) UNSIGNED NOT NULL',
-        'branch_id' => 'INT(6) UNSIGNED',
         'sale_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'prescriptions' => [
@@ -107,8 +85,8 @@ $schema = [
         'frequency' => 'VARCHAR(100)',
         'duration' => 'VARCHAR(100)',
         'refills' => 'INT(3)',
-        'branch_id' => 'INT(6) UNSIGNED',
-        'prescription_date' => 'DATE'
+        'prescription_date' => 'DATE',
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'purchase_orders' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -118,20 +96,17 @@ $schema = [
         'product_id' => 'INT(6) UNSIGNED',
         'status' => 'VARCHAR(50)',
         'total_amount' => 'DECIMAL(10, 2)',
-        'branch_id' => 'INT(6) UNSIGNED',
         'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'logs' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
         'user_id' => 'INT(6) UNSIGNED NOT NULL',
-        'branch_id' => 'INT(6) UNSIGNED',
         'action' => 'VARCHAR(255) NOT NULL',
         'action_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'session_logs' => [
         'id' => 'INT AUTO_INCREMENT PRIMARY KEY',
         'user_id' => 'INT(6) UNSIGNED NULL',
-        'branch_id' => 'INT(6) UNSIGNED',
         'event_type' => "VARCHAR(50) NOT NULL COMMENT 'login, logout, timeout, hijack'",
         'ip_address' => 'VARCHAR(45) NOT NULL',
         'user_agent' => 'TEXT NOT NULL',

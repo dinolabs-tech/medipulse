@@ -12,14 +12,10 @@ if (isset($_POST['add'])) {
   $email = $_POST['email'];
   $address = $_POST['address'];
   $insurance_details = $_POST['insurance_details'];
-  $city = $_POST['city'];
-  $state = $_POST['state'];
-  $country = $_POST['country'];
-  $branch_id = $_SESSION['branch_id'] ?? null;
 
-  $sql = "INSERT INTO patients (first_name, last_name, date_of_birth, gender, phone, email, address, city, state, country, insurance_details, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO patients (first_name, last_name, date_of_birth, gender, phone, email, address, insurance_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("sssssssssssi", $first_name, $last_name, $date_of_birth, $gender, $phone, $email, $address, $city, $state, $country, $insurance_details, $branch_id);
+  $stmt->bind_param("ssssssss", $first_name, $last_name, $date_of_birth, $gender, $phone, $email, $address, $insurance_details);
   if ($stmt->execute()) {
     log_action($conn, $_SESSION['user_id'], "Added patient: $first_name $last_name");
   } else {
@@ -39,13 +35,10 @@ if (isset($_POST['edit'])) {
   $email = $_POST['email'];
   $address = $_POST['address'];
   $insurance_details = $_POST['insurance_details'];
-  $city = $_POST['city'];
-  $state = $_POST['state'];
-  $country = $_POST['country'];
 
-  $sql = "UPDATE patients SET first_name=?, last_name=?, date_of_birth=?, gender=?, phone=?, email=?, address=?, city=?, state=?, country=?, insurance_details=? WHERE id=?";
+  $sql = "UPDATE patients SET first_name=?, last_name=?, date_of_birth=?, gender=?, phone=?, email=?, address=?, insurance_details=? WHERE id=?";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("sssssssssssi", $first_name, $last_name, $date_of_birth, $gender, $phone, $email, $address, $city, $state, $country, $insurance_details, $id);
+  $stmt->bind_param("ssssssssi", $first_name, $last_name, $date_of_birth, $gender, $phone, $email, $address, $insurance_details, $id);
   if ($stmt->execute()) {
     log_action($conn, $_SESSION['user_id'], "Edited patient: $first_name $last_name (ID: $id)");
   } else {
@@ -73,18 +66,8 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch Patients
-$branch_id = $_SESSION['branch_id'] ?? null;
 $sql = "SELECT * FROM patients";
-if ($branch_id !== null) {
-    $sql .= " WHERE branch_id = ?";
-}
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$stmt->close();
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -152,21 +135,12 @@ $stmt->close();
                     <input type="email" class="form-control" name="email" placeholder="Email">
                   </div>
                   <div class="col-md-3 mb-3">
-                    <input type="text" class="form-control" name="city" placeholder="City">
-                  </div>
-                  <div class="col-md-3 mb-3">
-                    <input type="text" class="form-control" name="state" placeholder="State">
-                  </div>
-                  <div class="col-md-3 mb-3">
-                    <input type="text" class="form-control" name="country" placeholder="Country">
-                  </div>
-                  <div class="col-md-3 mb-3">
                     <textarea name="address" class="form-control" placeholder="Address"></textarea>
                   </div>
-                  <div class="col-md-3 mb-3">
+                  <div class="col-md-2 mb-3">
                     <textarea name="insurance_details" class="form-control" placeholder="Insurance Details"></textarea>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-1">
                     <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
                   </div>
                 </div>
@@ -190,9 +164,6 @@ $stmt->close();
                       <th>Gender</th>
                       <th>Phone</th>
                       <th>Email</th>
-                      <th>City</th>
-                      <th>State</th>
-                      <th>Country</th>
                       <th>Address</th>
                       <th>Insurance</th>
                       <th>Action</th>
@@ -208,9 +179,6 @@ $stmt->close();
                         <td><?php echo $row['gender']; ?></td>
                         <td><?php echo $row['phone']; ?></td>
                         <td><?php echo $row['email']; ?></td>
-                        <td><?php echo $row['city']; ?></td>
-                        <td><?php echo $row['state']; ?></td>
-                        <td><?php echo $row['country']; ?></td>
                         <td><?php echo $row['address']; ?></td>
                         <td><?php echo $row['insurance_details']; ?></td>
                         <td class="d-flex">
@@ -263,21 +231,12 @@ $stmt->close();
                         <input type="email" name="email" class="form-control" placeholder="Email" value="<?php echo $edit_patient['email']; ?>">
                       </div>
                       <div class="col-md-3 mb-3">
-                        <input type="text" name="city" class="form-control" placeholder="City" value="<?php echo $edit_patient['city']; ?>">
-                      </div>
-                      <div class="col-md-3 mb-3">
-                        <input type="text" name="state" class="form-control" placeholder="State" value="<?php echo $edit_patient['state']; ?>">
-                      </div>
-                      <div class="col-md-3 mb-3">
-                        <input type="text" name="country" class="form-control" placeholder="Country" value="<?php echo $edit_patient['country']; ?>">
-                      </div>
-                      <div class="col-md-3 mb-3">
                         <textarea name="address" class="form-control" placeholder="Address"><?php echo $edit_patient['address']; ?></textarea>
                       </div>
-                      <div class="col-md-3 mb-3">
+                      <div class="col-md-2 mb-3">
                         <textarea name="insurance_details" class="form-control" placeholder="Insurance Details"><?php echo $edit_patient['insurance_details']; ?></textarea>
                       </div>
-                      <div class="col-md-3">
+                      <div class="col-md-1">
                         <button type="submit" name="edit" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
                       </div>
                     </div>

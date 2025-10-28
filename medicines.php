@@ -12,11 +12,10 @@ if (isset($_POST['add'])) {
   $batch_number = $_POST['batch_number'];
   $expiry_date = $_POST['expiry_date'];
   $profit_per_unit = $price - $cost_price;
-  $branch_id = $_SESSION['branch_id'] ?? null;
 
-  $sql = "INSERT INTO medicines (name, description, quantity, price, cost_price, profit_per_unit, batch_number, expiry_date, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO medicines (name, description, quantity, price, cost_price, profit_per_unit, batch_number, expiry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("ssidddssi", $name, $description, $quantity, $price, $cost_price, $profit_per_unit, $batch_number, $expiry_date, $branch_id);
+  $stmt->bind_param("ssidddss", $name, $description, $quantity, $price, $cost_price, $profit_per_unit, $batch_number, $expiry_date);
   if ($stmt->execute()) {
     log_action($conn, $_SESSION['user_id'], "Added medicine: $name");
   } else {
@@ -83,18 +82,8 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch Medicines
-$branch_id = $_SESSION['branch_id'] ?? null;
 $sql = "SELECT * FROM medicines";
-if ($branch_id !== null) {
-    $sql .= " WHERE branch_id = ?";
-}
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$stmt->close();
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>

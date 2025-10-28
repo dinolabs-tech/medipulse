@@ -7,13 +7,12 @@ if (isset($_POST['add'])) {
   $username = $_POST['username'];
   $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
   $role = $_POST['role'];
-  $branch_id = $_POST['branch_id'];
 
-  $sql = "INSERT INTO users (username, password, role, branch_id) VALUES (?, ?, ?, ?)";
+  $sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("sssi", $username, $password, $role, $branch_id);
+  $stmt->bind_param("sss", $username, $password, $role);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Added user: $username (Role: $role, Branch ID: $branch_id)");
+    log_action($conn, $_SESSION['user_id'], "Added user: $username (Role: $role)");
   } else {
     echo "<p style='color:red;'>Error adding user: " . $stmt->error . "</p>";
   }
@@ -25,19 +24,18 @@ if (isset($_POST['edit'])) {
   $id = $_POST['id'];
   $username = $_POST['username'];
   $role = $_POST['role'];
-  $branch_id = $_POST['branch_id'];
   $password_update = "";
   if (!empty($_POST['password'])) {
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $password_update = ", password=?";
   }
 
-  $sql = "UPDATE users SET username=?, role=?, branch_id=? $password_update WHERE id=?";
+  $sql = "UPDATE users SET username=?, role=? $password_update WHERE id=?";
   $stmt = $conn->prepare($sql);
   if (!empty($_POST['password'])) {
-    $stmt->bind_param("ssisi", $username, $role, $branch_id, $password, $id);
+    $stmt->bind_param("sssi", $username, $role, $password, $id);
   } else {
-    $stmt->bind_param("ssii", $username, $role, $branch_id, $id);
+    $stmt->bind_param("ssi", $username, $role, $id);
   }
 
   if ($stmt->execute()) {
@@ -63,23 +61,8 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch Users
-$branch_id = $_SESSION['branch_id'] ?? null;
-$sql = "SELECT u.*, b.name as branch_name FROM users u LEFT JOIN branches b ON u.branch_id = b.id WHERE u.role != 'Superuser'";
-if ($branch_id !== null) {
-    $sql .= " AND u.branch_id = ?";
-}
-$sql .= " ORDER BY u.username ASC";
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$stmt->close();
-
-// Fetch Branches for dropdown
-$branches_sql = "SELECT id, name FROM branches ORDER BY name ASC";
-$branches_result = $conn->query($branches_sql);
+$sql = "SELECT * FROM users where role != 'Superuser'";
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -138,14 +121,6 @@ $branches_result = $conn->query($branches_sql);
                       <option value="cashier">Cashier</option>
                     </select>
                   </div>
-                  <div class="col-md-3 mb-3">
-                    <select name="branch_id" class="form-control form-select" required>
-                      <option selected disabled value="">Select Branch</option>
-                      <?php while ($row = $branches_result->fetch_assoc()): ?>
-                        <option value="<?php echo $row['id']; ?>"><?php echo $row['name']; ?></option>
-                      <?php endwhile; ?>
-                    </select>
-                  </div>
                   <div class="col-md-3">
                     <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
                   </div>
@@ -167,7 +142,6 @@ $branches_result = $conn->query($branches_sql);
                       <th>ID</th>
                       <th>Username</th>
                       <th>Role</th>
-                      <th>Branch</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -178,7 +152,6 @@ $branches_result = $conn->query($branches_sql);
                         <td><?php echo $row['id']; ?></td>
                         <td><?php echo $row['username']; ?></td>
                         <td><?php echo $row['role']; ?></td>
-                        <td><?php echo $row['branch_name'] ?? 'N/A'; ?></td>
                         <td class="d-flex">
                           <a href="users.php?edit_id=<?php echo $row['id']; ?>" class="btn btn-primary btn-icon btn-round mx-2"><i class="fas fa-edit"></i></a>
                           <a href="users.php?delete=<?php echo $row['id']; ?>" class="btn btn-danger btn-icon btn-round mb-3"><i class="fas fa-trash"></i></a>
@@ -223,15 +196,6 @@ $branches_result = $conn->query($branches_sql);
                           <option value="pharmacist" <?php echo ($edit_user['role'] == 'pharmacist') ? 'selected' : ''; ?>>Pharmacist</option>
                           <option value="assistant" <?php echo ($edit_user['role'] == 'assistant') ? 'selected' : ''; ?>>Assistant</option>
                           <option value="cashier" <?php echo ($edit_user['role'] == 'cashier') ? 'selected' : ''; ?>>Cashier</option>
-                        </select>
-                      </div>
-                      <div class="col-md-3 mb-3">
-                        <select name="branch_id" class="form-control" required>
-                          <option value="">Select Branch</option>
-                          <?php $branches_result->data_seek(0); // Reset pointer for re-use ?>
-                          <?php while ($row = $branches_result->fetch_assoc()): ?>
-                            <option value="<?php echo $row['id']; ?>" <?php echo ($edit_user['branch_id'] == $row['id']) ? 'selected' : ''; ?>><?php echo $row['name']; ?></option>
-                          <?php endwhile; ?>
                         </select>
                       </div>
                       <div class="col-md-3">

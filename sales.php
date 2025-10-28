@@ -141,12 +141,11 @@ if (isset($_POST['checkout'])) {
             $total_item_price = $item['price'] * $item['quantity'];
             $profit_per_item = $item['profit_per_unit'] * $item['quantity'];
             $total_sale_price += $total_item_price;
-            $branch_id = $_SESSION['branch_id'] ?? null;
 
             // Insert into sales
-            $sql = "INSERT INTO sales (invoice_number, patient_id, medicine_id, quantity_sold, total_price, profit, user_id, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO sales (invoice_number, patient_id, medicine_id, quantity_sold, total_price, profit, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("siiidddi", $invoice_number, $patient_id, $item['id'], $item['quantity'], $total_item_price, $profit_per_item, $user_id, $branch_id);
+            $stmt->bind_param("siiiddd", $invoice_number, $patient_id, $item['id'], $item['quantity'], $total_item_price, $profit_per_item, $user_id);
             $stmt->execute();
 
             // Update medicine quantity
@@ -166,36 +165,13 @@ if (isset($_POST['checkout'])) {
 }
 
 // Fetch Medicines for dropdown
-$branch_id = $_SESSION['branch_id'] ?? null;
 $current_date = date('Y-m-d');
-$sql = "SELECT id, name, price, quantity, expiry_date FROM medicines WHERE quantity > 0 AND expiry_date >= ?";
-if ($branch_id !== null) {
-    $sql .= " AND branch_id = ?";
-}
-$sql .= " ORDER BY name ASC";
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("si", $current_date, $branch_id);
-} else {
-    $stmt->bind_param("s", $current_date);
-}
-$stmt->execute();
-$medicines_result = $stmt->get_result();
-$stmt->close();
+$sql = "SELECT id, name, price, quantity, expiry_date FROM medicines WHERE quantity > 0 AND expiry_date >= '$current_date' ORDER BY name ASC";
+$medicines_result = $conn->query($sql);
 
 // Fetch Patients for dropdown
-$sql = "SELECT id, first_name, last_name FROM patients";
-if ($branch_id !== null) {
-    $sql .= " WHERE branch_id = ?";
-}
-$sql .= " ORDER BY first_name ASC";
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$patients_result = $stmt->get_result();
-$stmt->close();
+$sql = "SELECT id, first_name, last_name FROM patients ORDER BY first_name ASC";
+$patients_result = $conn->query($sql);
 
 ?>
 

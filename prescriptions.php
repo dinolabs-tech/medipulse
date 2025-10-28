@@ -12,11 +12,10 @@ if (isset($_POST['add'])) {
   $duration = $_POST['duration'];
   $refills = $_POST['refills'];
   $prescription_date = $_POST['prescription_date'];
-  $branch_id = $_SESSION['branch_id'] ?? null;
 
-  $sql = "INSERT INTO prescriptions (patient_id, medicine_id, doctor_name, dosage, frequency, duration, refills, prescription_date, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO prescriptions (patient_id, medicine_id, doctor_name, dosage, frequency, duration, refills, prescription_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("iissssis", $patient_id, $medicine_id, $doctor_name, $dosage, $frequency, $duration, $refills, $prescription_date, $branch_id);
+  $stmt->bind_param("iissssis", $patient_id, $medicine_id, $doctor_name, $dosage, $frequency, $duration, $refills, $prescription_date);
   if ($stmt->execute()) {
     log_action($conn, $_SESSION['user_id'], "Added prescription for patient ID: $patient_id, medicine ID: $medicine_id");
   } else {
@@ -64,45 +63,16 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch Prescriptions
-$branch_id = $_SESSION['branch_id'] ?? null;
-$sql = "SELECT pr.*, p.first_name, p.last_name, m.name as medicine_name FROM prescriptions pr JOIN patients p ON pr.patient_id = p.id JOIN medicines m ON pr.medicine_id = m.id";
-if ($branch_id !== null) {
-    $sql .= " WHERE pr.branch_id = ?";
-}
-$sql .= " ORDER BY pr.prescription_date DESC";
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$prescriptions_result = $stmt->get_result();
-$stmt->close();
+$sql = "SELECT pr.*, p.first_name, p.last_name, m.name as medicine_name FROM prescriptions pr JOIN patients p ON pr.patient_id = p.id JOIN medicines m ON pr.medicine_id = m.id ORDER BY pr.prescription_date DESC";
+$prescriptions_result = $conn->query($sql);
 
 // Fetch Patients for dropdown
 $sql = "SELECT id, first_name, last_name FROM patients";
-if ($branch_id !== null) {
-    $sql .= " WHERE branch_id = ?";
-}
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$patients_result = $stmt->get_result();
-$stmt->close();
+$patients_result = $conn->query($sql);
 
 // Fetch Medicines for dropdown
 $sql = "SELECT id, name FROM medicines";
-if ($branch_id !== null) {
-    $sql .= " WHERE branch_id = ?";
-}
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$medicines_result = $stmt->get_result();
-$stmt->close();
+$medicines_result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>

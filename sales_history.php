@@ -51,22 +51,12 @@ if (isset($_GET['reprint_invoice']) && !empty($_GET['reprint_invoice'])) {
 
 
 // Fetch Sales History
-$branch_id = $_SESSION['branch_id'] ?? null;
 $sql = "SELECT s.id, s.invoice_number, p.first_name, p.last_name, m.name as medicine_name, s.quantity_sold, s.total_price, s.sale_date
         FROM sales s
         LEFT JOIN patients p ON s.patient_id = p.id
-        JOIN medicines m ON s.medicine_id = m.id";
-if ($branch_id !== null) {
-    $sql .= " WHERE s.branch_id = ?";
-}
-$sql .= " ORDER BY s.sale_date DESC";
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$sales_history_result = $stmt->get_result();
-$stmt->close();
+        JOIN medicines m ON s.medicine_id = m.id
+        ORDER BY s.sale_date DESC";
+$sales_history_result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>

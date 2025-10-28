@@ -1,15 +1,11 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 require_once 'database/database_schema.php';
-// include_once 'secure_session.php'; // Include the secure session
-
+include_once 'secure_session.php'; // Include the secure session
 
 // Check for superuser role and create if not exists
-$check_superuser_sql = "SELECT * FROM users WHERE role = 'Superuser'";
+$check_superuser_sql = "SELECT * FROM users WHERE role = 'superuser'";
 $superuser_result = $conn->query($check_superuser_sql);
 
 if ($superuser_result->num_rows == 0) {
@@ -32,82 +28,33 @@ if ($superuser_result->num_rows == 0) {
   $stmt->close();
 }
 
-// Fetch branches for the dropdown
-$branches_sql = "SELECT id, name FROM branches";
-$branches_result = $conn->query($branches_sql);
-$branches = [];
-if ($branches_result->num_rows > 0) {
-    while ($row = $branches_result->fetch_assoc()) {
-        $branches[] = $row;
-    }
-}
-
 if (isset($_POST['login'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    $branch_id = $_POST['branch_id'];
+  $username = $_POST['username'];
+  $password = $_POST['password'];
 
-    // First, try to find the user by username only to check their role
-    $sql_check_role = "SELECT id, username, password, role, staffname, branch_id FROM users WHERE username=?";
-    $stmt_check_role = $conn->prepare($sql_check_role);
-    $stmt_check_role->bind_param("s", $username);
-    $stmt_check_role->execute();
-    $result_check_role = $stmt_check_role->get_result();
-    $user_data = $result_check_role->fetch_assoc();
-    $stmt_check_role->close();
+  $sql = "SELECT * FROM users WHERE username='$username'";
+  $result = $conn->query($sql);
 
-    if ($user_data) {
-        if (password_verify($password, $user_data['password'])) {
-            // If Superuser, bypass branch_id check
-            if ($user_data['role'] === 'Superuser') {
-                $_SESSION['user_id'] = $user_data['id'];
-                $_SESSION['username'] = $user_data['username'];
-                $_SESSION['role'] = $user_data['role'];
-                $_SESSION['staffname'] = $user_data['staffname'];
-                $_SESSION['branch_id'] = null; // Superuser is not tied to a specific branch
+  if ($result->num_rows > 0) {
+    $user = $result->fetch_assoc();
+    if (password_verify($password, $user['password'])) {
+      $_SESSION['user_id'] = $user['id'];
+      $_SESSION['username'] = $user['username'];
+      $_SESSION['role'] = $user['role'];
+      $_SESSION['staffname'] = $user['staffname'];
 
-                
-                $log_event('login');
+      // Regenerate session ID for security
+      // Log login
+      $log_event = secure_session_start($conn);
+      $log_event('login');
 
-                header("Location: index.php");
-                exit();
-            } else {
-                // For other roles, proceed with branch_id verification
-                $sql = "SELECT id, username, password, role, staffname, branch_id FROM users WHERE username=? AND branch_id=?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("si", $username, $branch_id);
-                $stmt->execute();
-                $result = $stmt->get_result();
-
-                if ($result->num_rows > 0) {
-                    $user = $result->fetch_assoc();
-                    // Password already verified above, but re-verify for good measure if needed
-                    if (password_verify($password, $user['password'])) {
-                        $_SESSION['user_id'] = $user['id'];
-                        $_SESSION['username'] = $user['username'];
-                        $_SESSION['role'] = $user['role'];
-                        $_SESSION['staffname'] = $user['staffname'];
-                        $_SESSION['branch_id'] = $user['branch_id'];
-
-                        
-                        $log_event('login');
-
-                        header("Location: index.php");
-                        exit();
-                    } else {
-                        $error_message = "Invalid password.";
-                    }
-                } else {
-                    $error_message = "No user found with that username and branch.";
-                }
-                $stmt->close();
-            }
-        } else {
-            $error_message = "Invalid password.";
-        }
+      header("Location: index.php");
     } else {
-        $error_message = "No user found with that username.";
+      echo "Invalid password.";
     }
+  } else {
+    echo "No user found.";
+  }
 }
 ?>
 
@@ -126,20 +73,9 @@ if (isset($_POST['login'])) {
                 <h3 class="text-center">Login</h3>
               </div>
               <div class="card-body">
-                <?php if (isset($error_message)) : ?>
-                  <div class="alert alert-danger" role="alert">
-                    <?php echo $error_message; ?>
-                  </div>
-                <?php endif; ?>
                 <form action="login.php" method="post">
                   <input type="text" class="form-control mb-3" name="username" placeholder="Username" required>
                   <input type="password" class="form-control mb-3" name="password" placeholder="Password" required>
-                  <select class="form-control mb-3" name="branch_id" id="branchSelect">
-                    <option value="">Select Branch</option>
-                    <?php foreach ($branches as $branch) : ?>
-                      <option value="<?php echo $branch['id']; ?>"><?php echo $branch['name']; ?></option>
-                    <?php endforeach; ?>
-                  </select>
                   <div class="col-md-12 text-center">
                     <button type="submit" class="btn btn-primary rounded text-center" name="login">Login</button>
                   </div>
@@ -151,15 +87,6 @@ if (isset($_POST['login'])) {
       </div>
     </section>
   </div>
-  <script>
-    document.getElementById('branchSelect').addEventListener('change', function() {
-        if (this.value === '') {
-            this.removeAttribute('required');
-        } else {
-            this.setAttribute('required', 'required');
-        }
-    });
-  </script>
 </body>
 
 </html>

@@ -9,14 +9,10 @@ if (isset($_POST['add'])) {
   $phone = $_POST['phone'];
   $email = $_POST['email'];
   $address = $_POST['address'];
-  $city = $_POST['city'];
-  $state = $_POST['state'];
-  $country = $_POST['country'];
-  $branch_id = $_SESSION['branch_id'] ?? null;
 
-  $sql = "INSERT INTO suppliers (name, contact_person, phone, email, address, city, state, country, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO suppliers (name, contact_person, phone, email, address) VALUES (?, ?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("ssssssssi", $name, $contact_person, $phone, $email, $address, $city, $state, $country, $branch_id);
+  $stmt->bind_param("sssss", $name, $contact_person, $phone, $email, $address);
   if ($stmt->execute()) {
     log_action($conn, $_SESSION['user_id'], "Added supplier: $name");
   } else {
@@ -33,13 +29,10 @@ if (isset($_POST['edit'])) {
   $phone = $_POST['phone'];
   $email = $_POST['email'];
   $address = $_POST['address'];
-  $city = $_POST['city'];
-  $state = $_POST['state'];
-  $country = $_POST['country'];
 
-  $sql = "UPDATE suppliers SET name=?, contact_person=?, phone=?, email=?, address=?, city=?, state=?, country=? WHERE id=?";
+  $sql = "UPDATE suppliers SET name=?, contact_person=?, phone=?, email=?, address=? WHERE id=?";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("ssssssssi", $name, $contact_person, $phone, $email, $address, $city, $state, $country, $id);
+  $stmt->bind_param("sssssi", $name, $contact_person, $phone, $email, $address, $id);
   if ($stmt->execute()) {
     log_action($conn, $_SESSION['user_id'], "Edited supplier: $name (ID: $id)");
   } else {
@@ -62,18 +55,8 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch Suppliers
-$branch_id = $_SESSION['branch_id'] ?? null;
 $sql = "SELECT * FROM suppliers";
-if ($branch_id !== null) {
-    $sql .= " WHERE branch_id = ?";
-}
-$stmt = $conn->prepare($sql);
-if ($branch_id !== null) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$stmt->close();
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -130,15 +113,6 @@ $stmt->close();
                   <input type="email" class="form-control" name="email" placeholder="Email">
                 </div>
                 <div class="col-md-4 mb-3">
-                  <input type="text" class="form-control" name="city" placeholder="City">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <input type="text" class="form-control" name="state" placeholder="State">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <input type="text" class="form-control" name="country" placeholder="Country">
-                </div>
-                <div class="col-md-4 mb-3">
                   <textarea name="address" class="form-control" placeholder="Address"></textarea>
                 </div>
                 <div class="col-md-4">
@@ -164,9 +138,6 @@ $stmt->close();
                   <th>Contact Person</th>
                   <th>Phone</th>
                   <th>Email</th>
-                  <th>City</th>
-                  <th>State</th>
-                  <th>Country</th>
                   <th>Address</th>
                   <th>Action</th>
                 </tr>
@@ -180,9 +151,6 @@ $stmt->close();
                     <td><?php echo $row['contact_person']; ?></td>
                     <td><?php echo $row['phone']; ?></td>
                     <td><?php echo $row['email']; ?></td>
-                    <td><?php echo $row['city']; ?></td>
-                    <td><?php echo $row['state']; ?></td>
-                    <td><?php echo $row['country']; ?></td>
                     <td><?php echo $row['address']; ?></td>
                     <td>
                       <a href="suppliers.php?edit_id=<?php echo $row['id']; ?>" class="btn btn-primary btn-icon btn-round mb-3"><i class="fas fa-edit"></i></a> 
@@ -226,15 +194,6 @@ $stmt->close();
                 </div>
                 <div class="col-md-4 mb-3">
                 <input type="email" class="form-control"  name="email" placeholder="Email" value="<?php echo $edit_supplier['email']; ?>">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <input type="text" class="form-control" name="city" placeholder="City" value="<?php echo $edit_supplier['city']; ?>">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <input type="text" class="form-control" name="state" placeholder="State" value="<?php echo $edit_supplier['state']; ?>">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <input type="text" class="form-control" name="country" placeholder="Country" value="<?php echo $edit_supplier['country']; ?>">
                 </div>
                 <div class="col-md-4 mb-3">
                 <textarea name="address" class="form-control"  placeholder="Address"><?php echo $edit_supplier['address']; ?></textarea>
