@@ -1,5 +1,5 @@
 <?php
-session_start();
+// session_start() is now handled in login.php or index.php
 function log_action($conn, $user_id, $action)
 {
     $branch_id = $_SESSION['branch_id'] ?? null;

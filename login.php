@@ -5,10 +5,13 @@ ini_set('display_errors', 1);
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 require_once 'database/database_schema.php';
-include_once 'secure_session.php'; // Include the secure session
+session_start(); // Start a regular session
 
-// Start secure session and get the logging function
-$log_event = secure_session_start($conn);
+// Dummy log_event function since secure_session is removed
+$log_event = function($type) use ($conn) {
+    // Log to a file or simply do nothing if session_logs table is removed
+    error_log("Action logged: " . $type . " by user ID: " . ($_SESSION['user_id'] ?? 'N/A'));
+};
 
 // Check for superuser role and create if not exists
 $check_superuser_sql = "SELECT * FROM users WHERE role = 'Superuser'";
@@ -68,7 +71,6 @@ if (isset($_POST['login'])) {
                 $_SESSION['staffname'] = $user_data['staffname'];
                 $_SESSION['branch_id'] = null; // Superuser is not tied to a specific branch
 
-                $log_event = secure_session_start($conn);
                 $log_event('login');
 
                 header("Location: index.php");
@@ -91,7 +93,6 @@ if (isset($_POST['login'])) {
                         $_SESSION['staffname'] = $user['staffname'];
                         $_SESSION['branch_id'] = $user['branch_id'];
 
-                        $log_event = secure_session_start($conn);
                         $log_event('login');
 
                         header("Location: index.php");
@@ -137,7 +138,7 @@ if (isset($_POST['login'])) {
                   <input type="text" class="form-control mb-3" name="username" placeholder="Username" required>
                   <input type="password" class="form-control mb-3" name="password" placeholder="Password" required>
                   <select class="form-control mb-3" name="branch_id" id="branchSelect">
-                    <option value="">Select Branch</option>
+                    <option value="">Select Branch (Optional for Superuser)</option>
                     <?php foreach ($branches as $branch) : ?>
                       <option value="<?php echo $branch['id']; ?>"><?php echo $branch['name']; ?></option>
                     <?php endforeach; ?>
@@ -155,10 +156,11 @@ if (isset($_POST['login'])) {
   </div>
   <script>
     document.getElementById('branchSelect').addEventListener('change', function() {
-        if (this.value === '') {
-            this.removeAttribute('required');
-        } else {
+        // Only make required if a value is selected and it's not the "Select Branch" option
+        if (this.value !== '') {
             this.setAttribute('required', 'required');
+        } else {
+            this.removeAttribute('required');
         }
     });
   </script>
