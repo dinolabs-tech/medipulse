@@ -4,6 +4,11 @@ require_once 'database/db_connection.php';
 require_once 'database/database_schema.php';
 include_once 'secure_session.php'; // Include the secure session
 
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+session_start();
+
 // Fetch branches for the dropdown
 $branches_sql = "SELECT id, name FROM branches";
 $branches_result = $conn->query($branches_sql);
