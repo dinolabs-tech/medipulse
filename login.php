@@ -138,7 +138,7 @@ if (isset($_POST['login'])) {
                   <input type="text" class="form-control mb-3" name="username" placeholder="Username" required>
                   <input type="password" class="form-control mb-3" name="password" placeholder="Password" required>
                   <select class="form-control mb-3" name="branch_id" id="branchSelect">
-                    <option value="">Select Branch (Optional for Superuser)</option>
+                    <option value="">Select Branch</option>
                     <?php foreach ($branches as $branch) : ?>
                       <option value="<?php echo $branch['id']; ?>"><?php echo $branch['name']; ?></option>
                     <?php endforeach; ?>
