@@ -42,8 +42,7 @@ $schema = [
         'password' => 'VARCHAR(255) NOT NULL',
         'role' => 'VARCHAR(50) NOT NULL',
         'branch_id' => 'INT(6) UNSIGNED',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'patients' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -59,8 +58,7 @@ $schema = [
         'country' => 'VARCHAR(100)',
         'branch_id' => 'INT(6) UNSIGNED',
         'insurance_details' => 'TEXT',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'medicines' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -73,8 +71,7 @@ $schema = [
         'batch_number' => 'VARCHAR(100)',
         'expiry_date' => 'DATE',
         'branch_id' => 'INT(6) UNSIGNED',
-        'added_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'added_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'suppliers' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -87,8 +84,7 @@ $schema = [
         'state' => 'VARCHAR(100)',
         'country' => 'VARCHAR(100)',
         'branch_id' => 'INT(6) UNSIGNED',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'sales' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -100,11 +96,7 @@ $schema = [
         'profit' => 'DECIMAL(10, 2) NOT NULL',
         'user_id' => 'INT(6) UNSIGNED NOT NULL',
         'branch_id' => 'INT(6) UNSIGNED',
-        'sale_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`patient_id`) REFERENCES `patients`(`id`) ON DELETE SET NULL',
-        'FOREIGN KEY (`medicine_id`) REFERENCES `medicines`(`id`) ON DELETE CASCADE',
-        'FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'sale_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'prescriptions' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -116,11 +108,7 @@ $schema = [
         'duration' => 'VARCHAR(100)',
         'refills' => 'INT(3)',
         'branch_id' => 'INT(6) UNSIGNED',
-        'prescription_date' => 'DATE',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`patient_id`) REFERENCES `patients`(`id`) ON DELETE CASCADE',
-        'FOREIGN KEY (`medicine_id`) REFERENCES `medicines`(`id`) ON DELETE CASCADE',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'prescription_date' => 'DATE'
     ],
     'purchase_orders' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -131,18 +119,14 @@ $schema = [
         'status' => 'VARCHAR(50)',
         'total_amount' => 'DECIMAL(10, 2)',
         'branch_id' => 'INT(6) UNSIGNED',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`supplier_id`) REFERENCES `suppliers`(`id`) ON DELETE CASCADE',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'logs' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
         'user_id' => 'INT(6) UNSIGNED NOT NULL',
         'branch_id' => 'INT(6) UNSIGNED',
         'action' => 'VARCHAR(255) NOT NULL',
-        'action_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'action_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'session_logs' => [
         'id' => 'INT AUTO_INCREMENT PRIMARY KEY',
@@ -151,9 +135,7 @@ $schema = [
         'event_type' => "VARCHAR(50) NOT NULL COMMENT 'login, logout, timeout, hijack'",
         'ip_address' => 'VARCHAR(45) NOT NULL',
         'user_agent' => 'TEXT NOT NULL',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL',
-        'FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL'
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ]
 ];
 
