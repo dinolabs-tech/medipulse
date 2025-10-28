@@ -128,6 +128,15 @@ $schema = [
         'action' => 'VARCHAR(255) NOT NULL',
         'action_date' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
+    'session_logs' => [
+        'id' => 'INT AUTO_INCREMENT PRIMARY KEY',
+        'user_id' => 'INT(6) UNSIGNED NULL',
+        'branch_id' => 'INT(6) UNSIGNED',
+        'event_type' => "VARCHAR(50) NOT NULL COMMENT 'login, logout, timeout, hijack'",
+        'ip_address' => 'VARCHAR(45) NOT NULL',
+        'user_agent' => 'TEXT NOT NULL',
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+    ]
 ];
 
 // Execute table creation
