@@ -76,11 +76,11 @@ if (isset($_GET['delete'])) {
 
 // Fetch Patients
 $sql = "SELECT * FROM patients";
-if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
+if ($current_branch_id && $_SESSION['role'] != 'Superuser' && $_SESSION['role'] != 'admin') {
   $sql .= " WHERE branch_id = ?";
 }
 $stmt = $conn->prepare($sql);
-if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
+if ($current_branch_id && $_SESSION['role'] != 'Superuser' && $_SESSION['role'] != 'admin') {
   $stmt->bind_param("i", $current_branch_id);
 }
 $stmt->execute();

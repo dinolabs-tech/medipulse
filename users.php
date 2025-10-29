@@ -72,13 +72,13 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch Users
-$sql = "SELECT u.*, b.name as branch_name FROM users u LEFT JOIN branches b ON u.branch_id = b.id WHERE u.role != 'superuser'";
-if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
+$sql = "SELECT u.*, b.name as branch_name FROM users u LEFT JOIN branches b ON u.branch_id = b.id WHERE u.role != 'Superuser'";
+if ($current_branch_id && $_SESSION['role'] != 'Superuser' && $_SESSION['role'] != 'admin') {
   $sql .= " AND u.branch_id = ?";
 }
 $sql .= " ORDER BY u.username ASC";
 $stmt = $conn->prepare($sql);
-if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
+if ($current_branch_id && $_SESSION['role'] != 'Superuser' && $_SESSION['role'] != 'admin') {
   $stmt->bind_param("i", $current_branch_id);
 }
 $stmt->execute();
