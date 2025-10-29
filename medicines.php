@@ -37,9 +37,10 @@ if (isset($_POST['edit'])) {
   $batch_number = trim($_POST['batch_number']);
   $expiry_date  = $_POST['expiry_date']; // validate format if needed
   $profit_per_unit = $price - $cost_price;
+  $branch_id = $_POST['branch_id'];
 
   $sql = "UPDATE medicines 
-            SET name = ?, description = ?, quantity = ?, price = ?, cost_price = ?, profit_per_unit = ?, batch_number = ?, expiry_date = ? 
+            SET name = ?, description = ?, quantity = ?, price = ?, cost_price = ?, profit_per_unit = ?, batch_number = ?, expiry_date = ?, branch_id = ?
             WHERE id = ? AND branch_id = ?";
 
   $stmt = $conn->prepare($sql);
@@ -48,7 +49,7 @@ if (isset($_POST['edit'])) {
   }
 
   $stmt->bind_param(
-    "ssidddssii",
+    "ssidddssiii",
     $name,
     $description,
     $quantity,
@@ -57,6 +58,7 @@ if (isset($_POST['edit'])) {
     $profit_per_unit,
     $batch_number,
     $expiry_date,
+    $branch_id,
     $id,
     $current_branch_id
   );
@@ -103,6 +105,10 @@ if ($current_branch_id) {
 $stmt->execute();
 $result = $stmt->get_result();
 $stmt->close();
+
+// Fetch Branches for dropdown
+$branches_sql = "SELECT id, name FROM branches ORDER BY name ASC";
+$branches_result = $conn->query($branches_sql);
 ?>
 
 <!DOCTYPE html>
@@ -165,6 +171,20 @@ $stmt->close();
                   </div>
                   <div class="col-md-3 mb-3">
                     <input type="date" class="form-control" name="expiry_date" placeholder="Expiry Date">
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <select name="branch_id" class="form-control form-select" required>
+                      <option selected disabled value="">Select Branch</option>
+                      <?php
+                      if ($branches_result->num_rows > 0) {
+                        while ($branch = $branches_result->fetch_assoc()) {
+                          echo '<option value="' . $branch['id'] . '">' . $branch['name'] . '</option>';
+                        }
+                        // Reset pointer for later use if needed
+                        $branches_result->data_seek(0);
+                      }
+                      ?>
+                    </select>
                   </div>
                   <div class="col-md-3">
                     <button type="submit" name="add" class="btn btn-primary btn-round btn-icon"><i class="fas fa-save"></i></button>
@@ -261,6 +281,21 @@ $stmt->close();
                       </div>
                       <div class="col-md-3 mb-3">
                         <input type="date" name="expiry_date" class="form-control" placeholder="Expiry Date" value="<?php echo $edit_medicine['expiry_date']; ?>">
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <select name="branch_id" class="form-control form-select" required>
+                          <option value="">Select Branch</option>
+                          <?php
+                          if ($branches_result->num_rows > 0) {
+                            while ($branch = $branches_result->fetch_assoc()) {
+                              $selected = ($edit_medicine['branch_id'] == $branch['id']) ? 'selected' : '';
+                              echo '<option value="' . $branch['id'] . '" ' . $selected . '>' . $branch['name'] . '</option>';
+                            }
+                            // Reset pointer for later use if needed
+                            $branches_result->data_seek(0);
+                          }
+                          ?>
+                        </select>
                       </div>
                       <div class="col-md-3">
                         <button type="submit" name="edit" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>

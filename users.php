@@ -146,6 +146,20 @@ $branches_result = $conn->query($branches_sql);
                       <option value="cashier">Cashier</option>
                     </select>
                   </div>
+                  <div class="col-md-3 mb-3">
+                    <select name="branch_id" class="form-control form-select" required>
+                      <option selected disabled value="">Select Branch</option>
+                      <?php
+                      if ($branches_result->num_rows > 0) {
+                        while ($branch = $branches_result->fetch_assoc()) {
+                          echo '<option value="' . $branch['id'] . '">' . $branch['name'] . '</option>';
+                        }
+                        // Reset pointer for later use if needed
+                        $branches_result->data_seek(0);
+                      }
+                      ?>
+                    </select>
+                  </div>
                   <div class="col-md-3">
                     <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
                   </div>
@@ -221,6 +235,21 @@ $branches_result = $conn->query($branches_sql);
                           <option value="pharmacist" <?php echo ($edit_user['role'] == 'pharmacist') ? 'selected' : ''; ?>>Pharmacist</option>
                           <option value="assistant" <?php echo ($edit_user['role'] == 'assistant') ? 'selected' : ''; ?>>Assistant</option>
                           <option value="cashier" <?php echo ($edit_user['role'] == 'cashier') ? 'selected' : ''; ?>>Cashier</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <select name="branch_id" class="form-control form-select" required>
+                          <option value="">Select Branch</option>
+                          <?php
+                          if ($branches_result->num_rows > 0) {
+                            while ($branch = $branches_result->fetch_assoc()) {
+                              $selected = ($edit_user['branch_id'] == $branch['id']) ? 'selected' : '';
+                              echo '<option value="' . $branch['id'] . '" ' . $selected . '>' . $branch['name'] . '</option>';
+                            }
+                            // Reset pointer for later use if needed
+                            $branches_result->data_seek(0);
+                          }
+                          ?>
                         </select>
                       </div>
                       <div class="col-md-3">

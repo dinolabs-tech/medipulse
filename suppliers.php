@@ -31,10 +31,11 @@ if (isset($_POST['edit'])) {
   $phone = $_POST['phone'];
   $email = $_POST['email'];
   $address = $_POST['address'];
+  $branch_id = $_POST['branch_id'];
 
-  $sql = "UPDATE suppliers SET name=?, contact_person=?, phone=?, email=?, address=? WHERE id=? AND branch_id = ?";
+  $sql = "UPDATE suppliers SET name=?, contact_person=?, phone=?, email=?, address=?, branch_id=? WHERE id=? AND branch_id = ?";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("sssssii", $name, $contact_person, $phone, $email, $address, $id, $current_branch_id);
+  $stmt->bind_param("sssssiii", $name, $contact_person, $phone, $email, $address, $branch_id, $id, $current_branch_id);
   if ($stmt->execute()) {
     log_action($conn, $_SESSION['user_id'], "Edited supplier: $name (ID: $id)", $current_branch_id);
   } else {
@@ -75,6 +76,10 @@ if ($current_branch_id) {
 $stmt->execute();
 $result = $stmt->get_result();
 $stmt->close();
+
+// Fetch Branches for dropdown
+$branches_sql = "SELECT id, name FROM branches ORDER BY name ASC";
+$branches_result = $conn->query($branches_sql);
 ?>
 
 <!DOCTYPE html>
@@ -132,6 +137,20 @@ $stmt->close();
                 </div>
                 <div class="col-md-4 mb-3">
                   <textarea name="address" class="form-control" placeholder="Address"></textarea>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <select name="branch_id" class="form-control form-select" required>
+                    <option selected disabled value="">Select Branch</option>
+                    <?php
+                    if ($branches_result->num_rows > 0) {
+                      while ($branch = $branches_result->fetch_assoc()) {
+                        echo '<option value="' . $branch['id'] . '">' . $branch['name'] . '</option>';
+                      }
+                      // Reset pointer for later use if needed
+                      $branches_result->data_seek(0);
+                    }
+                    ?>
+                  </select>
                 </div>
                 <div class="col-md-4">
                   <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
@@ -215,6 +234,21 @@ $stmt->close();
                 </div>
                 <div class="col-md-4 mb-3">
                 <textarea name="address" class="form-control"  placeholder="Address"><?php echo $edit_supplier['address']; ?></textarea>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <select name="branch_id" class="form-control form-select" required>
+                    <option value="">Select Branch</option>
+                    <?php
+                    if ($branches_result->num_rows > 0) {
+                      while ($branch = $branches_result->fetch_assoc()) {
+                        $selected = ($edit_supplier['branch_id'] == $branch['id']) ? 'selected' : '';
+                        echo '<option value="' . $branch['id'] . '" ' . $selected . '>' . $branch['name'] . '</option>';
+                      }
+                      // Reset pointer for later use if needed
+                      $branches_result->data_seek(0);
+                    }
+                    ?>
+                  </select>
                 </div>
                 <div class="col-md-4">
                 <button type="submit" name="edit" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>

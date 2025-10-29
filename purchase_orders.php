@@ -91,16 +91,17 @@ if (isset($_POST['edit'])) {
   $product_id = isset($_POST['product_id']) && $_POST['product_id'] !== '' ? $_POST['product_id'] : null;
   $status = $_POST['status'];
   $total_amount = $_POST['total_amount'];
+  $branch_id = $_POST['branch_id'];
 
   if ($product_id) {
-    $sql = "UPDATE purchase_orders SET supplier_id=?, order_date=?, expected_delivery_date=?, product_id=?, status=?, total_amount=? WHERE id=? AND branch_id = ?";
+    $sql = "UPDATE purchase_orders SET supplier_id=?, order_date=?, expected_delivery_date=?, product_id=?, status=?, total_amount=?, branch_id=? WHERE id=? AND branch_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("isssssii", $supplier_id, $order_date, $expected_delivery_date, $product_id, $status, $total_amount, $id, $current_branch_id);
+    $stmt->bind_param("isssssiii", $supplier_id, $order_date, $expected_delivery_date, $product_id, $status, $total_amount, $branch_id, $id, $current_branch_id);
   } else {
-    $sql = "UPDATE purchase_orders SET supplier_id=?, order_date=?, expected_delivery_date=?, product_id=?, status=?, total_amount=? WHERE id=? AND branch_id = ?";
+    $sql = "UPDATE purchase_orders SET supplier_id=?, order_date=?, expected_delivery_date=?, product_id=?, status=?, total_amount=?, branch_id=? WHERE id=? AND branch_id = ?";
     $stmt = $conn->prepare($sql);
     $null_product_id = NULL; // Explicitly set to NULL for binding
-    $stmt->bind_param("issssiii", $supplier_id, $order_date, $expected_delivery_date, $null_product_id, $status, $total_amount, $id, $current_branch_id);
+    $stmt->bind_param("issssiiii", $supplier_id, $order_date, $expected_delivery_date, $null_product_id, $status, $total_amount, $branch_id, $id, $current_branch_id);
   }
 
   if ($stmt->execute()) {
@@ -159,6 +160,10 @@ if ($current_branch_id) {
 $stmt->execute();
 $suppliers_result = $stmt->get_result();
 $stmt->close();
+
+// Fetch Branches for dropdown
+$branches_sql = "SELECT id, name FROM branches ORDER BY name ASC";
+$branches_result = $conn->query($branches_sql);
 ?>
 
 <!DOCTYPE html>
@@ -252,6 +257,20 @@ $stmt->close();
                   </div>
                   <div class="col-md-3 mb-3">
                     <input type="text" class="form-control" name="total_amount" placeholder="Total Amount">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <select name="branch_id" class="form-control form-select" required>
+                      <option selected disabled value="">Select Branch</option>
+                      <?php
+                      if ($branches_result->num_rows > 0) {
+                        while ($branch = $branches_result->fetch_assoc()) {
+                          echo '<option value="' . $branch['id'] . '">' . $branch['name'] . '</option>';
+                        }
+                        // Reset pointer for later use if needed
+                        $branches_result->data_seek(0);
+                      }
+                      ?>
+                    </select>
                   </div>
                   <div class="col-md-1">
                     <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
@@ -381,6 +400,21 @@ $stmt->close();
                       </div>
                       <div class="col-md-3 mb-3">
                         <input class="form-control" type="text" name="total_amount" placeholder="Total Amount" value="<?php echo $edit_po['total_amount']; ?>">
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <select name="branch_id" class="form-control form-select" required>
+                          <option value="">Select Branch</option>
+                          <?php
+                          if ($branches_result->num_rows > 0) {
+                            while ($branch = $branches_result->fetch_assoc()) {
+                              $selected = ($edit_po['branch_id'] == $branch['id']) ? 'selected' : '';
+                              echo '<option value="' . $branch['id'] . '" ' . $selected . '>' . $branch['name'] . '</option>';
+                            }
+                            // Reset pointer for later use if needed
+                            $branches_result->data_seek(0);
+                          }
+                          ?>
+                        </select>
                       </div>
                       <div class="col-md-1">
                         <button type="submit" name="edit" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>

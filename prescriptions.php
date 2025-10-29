@@ -110,6 +110,10 @@ if ($current_branch_id) {
 $stmt->execute();
 $medicines_result = $stmt->get_result();
 $stmt->close();
+
+// Fetch Branches for dropdown
+$branches_sql = "SELECT id, name FROM branches ORDER BY name ASC";
+$branches_result = $conn->query($branches_sql);
 ?>
 
 <!DOCTYPE html>
@@ -185,6 +189,20 @@ $stmt->close();
                 </div>
                 <div class="col-md-4 mb-3">
                   <input type="date" class="form-control" name="prescription_date" placeholder="Prescription Date">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <select name="branch_id" class="form-control form-select" required>
+                    <option selected disabled value="">Select Branch</option>
+                    <?php
+                    if ($branches_result->num_rows > 0) {
+                      while ($branch = $branches_result->fetch_assoc()) {
+                        echo '<option value="' . $branch['id'] . '">' . $branch['name'] . '</option>';
+                      }
+                      // Reset pointer for later use if needed
+                      $branches_result->data_seek(0);
+                    }
+                    ?>
+                  </select>
                 </div>
                 <div class="col-md-4">
                   <button type="submit" name="add" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
@@ -296,6 +314,21 @@ $stmt->close();
                     </div>
                     <div class="col-md-4 mb-3">
                       <input type="date" class="form-control" name="prescription_date" placeholder="Prescription Date" value="<?php echo $edit_prescription['prescription_date']; ?>">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <select name="branch_id" class="form-control form-select" required>
+                        <option value="">Select Branch</option>
+                        <?php
+                        if ($branches_result->num_rows > 0) {
+                          while ($branch = $branches_result->fetch_assoc()) {
+                            $selected = ($edit_prescription['branch_id'] == $branch['id']) ? 'selected' : '';
+                            echo '<option value="' . $branch['id'] . '" ' . $selected . '>' . $branch['name'] . '</option>';
+                          }
+                          // Reset pointer for later use if needed
+                          $branches_result->data_seek(0);
+                        }
+                        ?>
+                      </select>
                     </div>
                     <div class="col-md-4">
                       <button type="submit" name="edit" class="btn btn-primary btn-icon btn-round"><i class="fas fa-save"></i></button>
