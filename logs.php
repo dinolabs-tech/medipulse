@@ -2,9 +2,21 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
 // Fetch Logs
-$sql = "SELECT l.*, u.username FROM logs l JOIN users u ON l.user_id = u.id ORDER BY l.action_date DESC";
-$logs_result = $conn->query($sql);
+$sql = "SELECT l.*, u.username, b.name as branch_name FROM logs l JOIN users u ON l.user_id = u.id LEFT JOIN branches b ON l.branch_id = b.id";
+if ($current_branch_id && $_SESSION['role'] != 'superuser') {
+  $sql .= " WHERE l.branch_id = ?";
+}
+$sql .= " ORDER BY l.action_date DESC";
+$stmt = $conn->prepare($sql);
+if ($current_branch_id && $_SESSION['role'] != 'superuser') {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$logs_result = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

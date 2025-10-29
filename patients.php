@@ -2,6 +2,8 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
 // Add Patient
 if (isset($_POST['add'])) {
   $first_name = $_POST['first_name'];
@@ -13,11 +15,11 @@ if (isset($_POST['add'])) {
   $address = $_POST['address'];
   $insurance_details = $_POST['insurance_details'];
 
-  $sql = "INSERT INTO patients (first_name, last_name, date_of_birth, gender, phone, email, address, insurance_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO patients (first_name, last_name, date_of_birth, gender, phone, email, address, insurance_details, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("ssssssss", $first_name, $last_name, $date_of_birth, $gender, $phone, $email, $address, $insurance_details);
+  $stmt->bind_param("ssssssssi", $first_name, $last_name, $date_of_birth, $gender, $phone, $email, $address, $insurance_details, $current_branch_id);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Added patient: $first_name $last_name");
+    log_action($conn, $_SESSION['user_id'], "Added patient: $first_name $last_name", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error adding patient: " . $stmt->error . "</p>";
   }
@@ -36,11 +38,11 @@ if (isset($_POST['edit'])) {
   $address = $_POST['address'];
   $insurance_details = $_POST['insurance_details'];
 
-  $sql = "UPDATE patients SET first_name=?, last_name=?, date_of_birth=?, gender=?, phone=?, email=?, address=?, insurance_details=? WHERE id=?";
+  $sql = "UPDATE patients SET first_name=?, last_name=?, date_of_birth=?, gender=?, phone=?, email=?, address=?, insurance_details=? WHERE id=? AND branch_id = ?";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("ssssssssi", $first_name, $last_name, $date_of_birth, $gender, $phone, $email, $address, $insurance_details, $id);
+  $stmt->bind_param("ssssssssii", $first_name, $last_name, $date_of_birth, $gender, $phone, $email, $address, $insurance_details, $id, $current_branch_id);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Edited patient: $first_name $last_name (ID: $id)");
+    log_action($conn, $_SESSION['user_id'], "Edited patient: $first_name $last_name (ID: $id)", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error editing patient: " . $stmt->error . "</p>";
   }
@@ -50,24 +52,40 @@ if (isset($_POST['edit'])) {
 // Delete Patient
 if (isset($_GET['delete'])) {
   $id = $_GET['delete'];
-  $sql_select = "SELECT first_name, last_name FROM patients WHERE id=$id";
-  $result_select = $conn->query($sql_select);
+  $sql_select = "SELECT first_name, last_name FROM patients WHERE id=? AND branch_id = ?";
+  $stmt_select = $conn->prepare($sql_select);
+  $stmt_select->bind_param("ii", $id, $current_branch_id);
+  $stmt_select->execute();
+  $result_select = $stmt_select->get_result();
   $patient_data = $result_select->fetch_assoc();
+  $stmt_select->close();
 
   $patient_name = '';
   if ($patient_data) {
     $patient_name = $patient_data['first_name'] . ' ' . $patient_data['last_name'];
   }
 
-  $sql = "DELETE FROM patients WHERE id=$id";
-  if ($conn->query($sql) === TRUE) {
-    log_action($conn, $_SESSION['user_id'], "Deleted patient: $patient_name (ID: $id)");
+  $sql = "DELETE FROM patients WHERE id=? AND branch_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $id, $current_branch_id);
+  if ($stmt->execute()) {
+    log_action($conn, $_SESSION['user_id'], "Deleted patient: $patient_name (ID: $id)", $current_branch_id);
   }
+  $stmt->close();
 }
 
 // Fetch Patients
 $sql = "SELECT * FROM patients";
-$result = $conn->query($sql);
+if ($current_branch_id) {
+  $sql .= " WHERE branch_id = ?";
+}
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

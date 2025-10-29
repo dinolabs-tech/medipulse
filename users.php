@@ -2,17 +2,20 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
 // Add User
 if (isset($_POST['add'])) {
   $username = $_POST['username'];
   $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
   $role = $_POST['role'];
+  $branch_id = $_POST['branch_id'];
 
-  $sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
+  $sql = "INSERT INTO users (username, password, role, branch_id) VALUES (?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("sss", $username, $password, $role);
+  $stmt->bind_param("sssi", $username, $password, $role, $branch_id);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Added user: $username (Role: $role)");
+    log_action($conn, $_SESSION['user_id'], "Added user: $username (Role: $role, Branch ID: $branch_id)", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error adding user: " . $stmt->error . "</p>";
   }
@@ -24,22 +27,23 @@ if (isset($_POST['edit'])) {
   $id = $_POST['id'];
   $username = $_POST['username'];
   $role = $_POST['role'];
+  $branch_id = $_POST['branch_id'];
   $password_update = "";
   if (!empty($_POST['password'])) {
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $password_update = ", password=?";
   }
 
-  $sql = "UPDATE users SET username=?, role=? $password_update WHERE id=?";
+  $sql = "UPDATE users SET username=?, role=?, branch_id=? $password_update WHERE id=?";
   $stmt = $conn->prepare($sql);
   if (!empty($_POST['password'])) {
-    $stmt->bind_param("sssi", $username, $role, $password, $id);
+    $stmt->bind_param("ssisi", $username, $role, $branch_id, $password, $id);
   } else {
-    $stmt->bind_param("ssi", $username, $role, $id);
+    $stmt->bind_param("ssii", $username, $role, $branch_id, $id);
   }
 
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Edited user: $username (ID: $id)");
+    log_action($conn, $_SESSION['user_id'], "Edited user: $username (ID: $id, Branch ID: $branch_id)", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error editing user: " . $stmt->error . "</p>";
   }
@@ -49,20 +53,41 @@ if (isset($_POST['edit'])) {
 // Delete User
 if (isset($_GET['delete'])) {
   $id = $_GET['delete'];
-  $sql_select = "SELECT username FROM users WHERE id=$id";
-  $result_select = $conn->query($sql_select);
+  $sql_select = "SELECT username FROM users WHERE id=? AND branch_id = ?";
+  $stmt_select = $conn->prepare($sql_select);
+  $stmt_select->bind_param("ii", $id, $current_branch_id);
+  $stmt_select->execute();
+  $result_select = $stmt_select->get_result();
   $user_data = $result_select->fetch_assoc();
   $username = $user_data ? $user_data['username'] : 'Unknown User';
+  $stmt_select->close();
 
-  $sql = "DELETE FROM users WHERE id=$id";
-  if ($conn->query($sql) === TRUE) {
-    log_action($conn, $_SESSION['user_id'], "Deleted user: $username (ID: $id)");
+  $sql = "DELETE FROM users WHERE id=? AND branch_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $id, $current_branch_id);
+  if ($stmt->execute()) {
+    log_action($conn, $_SESSION['user_id'], "Deleted user: $username (ID: $id)", $current_branch_id);
   }
+  $stmt->close();
 }
 
 // Fetch Users
-$sql = "SELECT * FROM users where role != 'Superuser'";
-$result = $conn->query($sql);
+$sql = "SELECT u.*, b.name as branch_name FROM users u LEFT JOIN branches b ON u.branch_id = b.id WHERE u.role != 'superuser'";
+if ($current_branch_id && $_SESSION['role'] != 'superuser') {
+  $sql .= " AND u.branch_id = ?";
+}
+$sql .= " ORDER BY u.username ASC";
+$stmt = $conn->prepare($sql);
+if ($current_branch_id && $_SESSION['role'] != 'superuser') {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
+
+// Fetch Branches for dropdown
+$branches_sql = "SELECT id, name FROM branches ORDER BY name ASC";
+$branches_result = $conn->query($branches_sql);
 ?>
 
 <!DOCTYPE html>

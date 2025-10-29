@@ -2,6 +2,8 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
 // Add Prescription
 if (isset($_POST['add'])) {
   $patient_id = $_POST['patient_id'];
@@ -13,11 +15,11 @@ if (isset($_POST['add'])) {
   $refills = $_POST['refills'];
   $prescription_date = $_POST['prescription_date'];
 
-  $sql = "INSERT INTO prescriptions (patient_id, medicine_id, doctor_name, dosage, frequency, duration, refills, prescription_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO prescriptions (patient_id, medicine_id, doctor_name, dosage, frequency, duration, refills, prescription_date, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("iissssis", $patient_id, $medicine_id, $doctor_name, $dosage, $frequency, $duration, $refills, $prescription_date);
+  $stmt->bind_param("iissssisi", $patient_id, $medicine_id, $doctor_name, $dosage, $frequency, $duration, $refills, $prescription_date, $current_branch_id);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Added prescription for patient ID: $patient_id, medicine ID: $medicine_id");
+    log_action($conn, $_SESSION['user_id'], "Added prescription for patient ID: $patient_id, medicine ID: $medicine_id", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error adding prescription: " . $stmt->error . "</p>";
   }
@@ -36,11 +38,11 @@ if (isset($_POST['edit'])) {
   $refills = $_POST['refills'];
   $prescription_date = $_POST['prescription_date'];
 
-  $sql = "UPDATE prescriptions SET patient_id=?, medicine_id=?, doctor_name=?, dosage=?, frequency=?, duration=?, refills=?, prescription_date=? WHERE id=?";
+  $sql = "UPDATE prescriptions SET patient_id=?, medicine_id=?, doctor_name=?, dosage=?, frequency=?, duration=?, refills=?, prescription_date=? WHERE id=? AND branch_id = ?";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("iisssisii", $patient_id, $medicine_id, $doctor_name, $dosage, $frequency, $duration, $refills, $prescription_date, $id);
+  $stmt->bind_param("iisssisiii", $patient_id, $medicine_id, $doctor_name, $dosage, $frequency, $duration, $refills, $prescription_date, $id, $current_branch_id);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Edited prescription ID: $id (Patient ID: $patient_id, Medicine ID: $medicine_id)");
+    log_action($conn, $_SESSION['user_id'], "Edited prescription ID: $id (Patient ID: $patient_id, Medicine ID: $medicine_id)", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error editing prescription: " . $stmt->error . "</p>";
   }
@@ -50,29 +52,64 @@ if (isset($_POST['edit'])) {
 // Delete Prescription
 if (isset($_GET['delete'])) {
   $id = $_GET['delete'];
-  $sql_select = "SELECT patient_id, medicine_id FROM prescriptions WHERE id=$id";
-  $result_select = $conn->query($sql_select);
+  $sql_select = "SELECT patient_id, medicine_id FROM prescriptions WHERE id=? AND branch_id = ?";
+  $stmt_select = $conn->prepare($sql_select);
+  $stmt_select->bind_param("ii", $id, $current_branch_id);
+  $stmt_select->execute();
+  $result_select = $stmt_select->get_result();
   $prescription_details = $result_select->fetch_assoc();
   $patient_id = $prescription_details['patient_id'];
   $medicine_id = $prescription_details['medicine_id'];
+  $stmt_select->close();
 
-  $sql = "DELETE FROM prescriptions WHERE id=$id";
-  if ($conn->query($sql) === TRUE) {
-    log_action($conn, $_SESSION['user_id'], "Deleted prescription ID: $id (Patient ID: $patient_id, Medicine ID: $medicine_id)");
+  $sql = "DELETE FROM prescriptions WHERE id=? AND branch_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $id, $current_branch_id);
+  if ($stmt->execute()) {
+    log_action($conn, $_SESSION['user_id'], "Deleted prescription ID: $id (Patient ID: $patient_id, Medicine ID: $medicine_id)", $current_branch_id);
   }
+  $stmt->close();
 }
 
 // Fetch Prescriptions
-$sql = "SELECT pr.*, p.first_name, p.last_name, m.name as medicine_name FROM prescriptions pr JOIN patients p ON pr.patient_id = p.id JOIN medicines m ON pr.medicine_id = m.id ORDER BY pr.prescription_date DESC";
-$prescriptions_result = $conn->query($sql);
+$sql = "SELECT pr.*, p.first_name, p.last_name, m.name as medicine_name FROM prescriptions pr JOIN patients p ON pr.patient_id = p.id JOIN medicines m ON pr.medicine_id = m.id";
+if ($current_branch_id) {
+  $sql .= " WHERE pr.branch_id = ?";
+}
+$sql .= " ORDER BY pr.prescription_date DESC";
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$prescriptions_result = $stmt->get_result();
+$stmt->close();
 
 // Fetch Patients for dropdown
 $sql = "SELECT id, first_name, last_name FROM patients";
-$patients_result = $conn->query($sql);
+if ($current_branch_id) {
+  $sql .= " WHERE branch_id = ?";
+}
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$patients_result = $stmt->get_result();
+$stmt->close();
 
 // Fetch Medicines for dropdown
 $sql = "SELECT id, name FROM medicines";
-$medicines_result = $conn->query($sql);
+if ($current_branch_id) {
+  $sql .= " WHERE branch_id = ?";
+}
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$medicines_result = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

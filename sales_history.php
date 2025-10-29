@@ -2,6 +2,8 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
 // Handle AJAX request to clear print session variables
 if (isset($_POST['clear_print_session']) && $_POST['clear_print_session'] === 'true') {
   unset($_SESSION['last_receipt']);
@@ -20,8 +22,15 @@ if (isset($_GET['reprint_invoice']) && !empty($_GET['reprint_invoice'])) {
             FROM sales s
             JOIN medicines m ON s.medicine_id = m.id
             WHERE s.invoice_number = ?";
+  if ($current_branch_id) {
+    $sql .= " AND s.branch_id = ?";
+  }
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("s", $invoice_number);
+  if ($current_branch_id) {
+    $stmt->bind_param("si", $invoice_number, $current_branch_id);
+  } else {
+    $stmt->bind_param("s", $invoice_number);
+  }
   $stmt->execute();
   $result = $stmt->get_result();
 
@@ -47,6 +56,7 @@ if (isset($_GET['reprint_invoice']) && !empty($_GET['reprint_invoice'])) {
   } else {
     echo "<p style='color:red;'>Error: Sale not found for reprinting with invoice number: " . htmlspecialchars($invoice_number) . "</p>";
   }
+  $stmt->close();
 }
 
 
@@ -54,9 +64,18 @@ if (isset($_GET['reprint_invoice']) && !empty($_GET['reprint_invoice'])) {
 $sql = "SELECT s.id, s.invoice_number, p.first_name, p.last_name, m.name as medicine_name, s.quantity_sold, s.total_price, s.sale_date
         FROM sales s
         LEFT JOIN patients p ON s.patient_id = p.id
-        JOIN medicines m ON s.medicine_id = m.id
-        ORDER BY s.sale_date DESC";
-$sales_history_result = $conn->query($sql);
+        JOIN medicines m ON s.medicine_id = m.id";
+if ($current_branch_id) {
+  $sql .= " WHERE s.branch_id = ?";
+}
+$sql .= " ORDER BY s.sale_date DESC";
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$sales_history_result = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

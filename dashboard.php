@@ -2,68 +2,169 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+// Get current branch ID from session
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
+// Prepare WHERE clause for branch filtering
+$branch_filter = $current_branch_id ? " WHERE branch_id = ?" : "";
+$branch_filter_join = $current_branch_id ? " AND t.branch_id = ?" : ""; // For joined tables
+
 // Fetch total profit
-$sql = "SELECT SUM(profit) as total_profit FROM sales";
-$result = $conn->query($sql);
+$sql = "SELECT SUM(profit) as total_profit FROM sales" . $branch_filter;
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 $total_profit = $result->fetch_assoc()['total_profit'];
+$stmt->close();
 
 // Fetch total sales count
-$sql = "SELECT COUNT(id) as total_sales_count FROM sales";
-$result = $conn->query($sql);
+$sql = "SELECT COUNT(id) as total_sales_count FROM sales" . $branch_filter;
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 $total_sales_count = $result->fetch_assoc()['total_sales_count'];
+$stmt->close();
 
 // Fetch total amount sold (quantity of medicines)
-$sql = "SELECT SUM(quantity_sold) as total_quantity_sold FROM sales";
-$result = $conn->query($sql);
+$sql = "SELECT SUM(quantity_sold) as total_quantity_sold FROM sales" . $branch_filter;
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 $total_quantity_sold = $result->fetch_assoc()['total_quantity_sold'];
+$stmt->close();
 
 // Fetch total Inventory amount (sum of all medicine quantities)
-$sql = "SELECT SUM(cost_price) as total_inventory, SUM(profit_per_unit) as total_profit FROM medicines";
-$result = $conn->query($sql);
+$sql = "SELECT SUM(cost_price) as total_inventory, SUM(profit_per_unit) as total_profit FROM medicines" . $branch_filter;
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 $total_inventory = $result->fetch_assoc();
+$stmt->close();
 
 // Fetch total sales revenue
-$sql = "SELECT SUM(total_price) as total_sales FROM sales";
-$result = $conn->query($sql);
+$sql = "SELECT SUM(total_price) as total_sales FROM sales" . $branch_filter;
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 $total_sales = $result->fetch_assoc()['total_sales'];
-
+$stmt->close();
 
 // Fetch total unique medicines
-$sql = "SELECT COUNT(DISTINCT id) as total_unique_medicines FROM medicines";
-$result = $conn->query($sql);
+$sql = "SELECT COUNT(DISTINCT id) as total_unique_medicines FROM medicines" . $branch_filter;
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 $total_unique_medicines = $result->fetch_assoc()['total_unique_medicines'];
+$stmt->close();
 
 // Fetch total patients
-$sql = "SELECT COUNT(id) as total_patients FROM patients";
-$result = $conn->query($sql);
+$sql = "SELECT COUNT(id) as total_patients FROM patients" . $branch_filter;
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
 $total_patients = $result->fetch_assoc()['total_patients'];
+$stmt->close();
 
 // Fetch recent sales with cashier name, sorted by date
 $sql = "SELECT s.id, p.first_name, p.last_name, m.name as medicine_name, s.quantity_sold, s.total_price, s.profit, s.sale_date, u.username as cashier_name 
         FROM sales s 
         LEFT JOIN patients p ON s.patient_id = p.id 
         JOIN medicines m ON s.medicine_id = m.id 
-        JOIN users u ON s.user_id = u.id
-        ORDER BY s.sale_date DESC LIMIT 5";
-$recent_sales = $conn->query($sql);
+        JOIN users u ON s.user_id = u.id";
+if ($current_branch_id) {
+  $sql .= " WHERE s.branch_id = ?";
+}
+$sql .= " ORDER BY s.sale_date DESC LIMIT 5";
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$recent_sales = $stmt->get_result();
+$stmt->close();
 
 // Fetch Low Stock Products (e.g., quantity < 10)
-$sql_low_stock = "SELECT id, name, quantity FROM medicines WHERE quantity > 0 AND quantity <= 10 ORDER BY quantity ASC";
-$low_stock_products = $conn->query($sql_low_stock);
+$sql_low_stock = "SELECT id, name, quantity FROM medicines WHERE quantity > 0 AND quantity <= 10";
+if ($current_branch_id) {
+  $sql_low_stock .= " AND branch_id = ?";
+}
+$sql_low_stock .= " ORDER BY quantity ASC";
+$stmt = $conn->prepare($sql_low_stock);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$low_stock_products = $stmt->get_result();
+$stmt->close();
 
 // Fetch Out of Stock Products (quantity = 0)
-$sql_out_of_stock = "SELECT id, name FROM medicines WHERE quantity = 0 ORDER BY name ASC";
-$out_of_stock_products = $conn->query($sql_out_of_stock);
+$sql_out_of_stock = "SELECT id, name FROM medicines WHERE quantity = 0";
+if ($current_branch_id) {
+  $sql_out_of_stock .= " AND branch_id = ?";
+}
+$sql_out_of_stock .= " ORDER BY name ASC";
+$stmt = $conn->prepare($sql_out_of_stock);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$out_of_stock_products = $stmt->get_result();
+$stmt->close();
 
 // Fetch Expired Products
 $current_date = date('Y-m-d');
-$sql_expired = "SELECT id, name, expiry_date FROM medicines WHERE expiry_date < '$current_date' ORDER BY expiry_date ASC";
-$expired_products = $conn->query($sql_expired);
+$sql_expired = "SELECT id, name, expiry_date FROM medicines WHERE expiry_date < ?";
+if ($current_branch_id) {
+  $sql_expired .= " AND branch_id = ?";
+}
+$sql_expired .= " ORDER BY expiry_date ASC";
+$stmt = $conn->prepare($sql_expired);
+if ($current_branch_id) {
+  $stmt->bind_param("si", $current_date, $current_branch_id);
+} else {
+  $stmt->bind_param("s", $current_date);
+}
+$stmt->execute();
+$expired_products = $stmt->get_result();
+$stmt->close();
 
 // Fetch Products About to Expire (within 3 months)
 $three_months_from_now = date('Y-m-d', strtotime('+3 months'));
-$sql_about_to_expire = "SELECT id, name, expiry_date FROM medicines WHERE expiry_date >= '$current_date' AND expiry_date <= '$three_months_from_now' ORDER BY expiry_date ASC";
-$about_to_expire_products = $conn->query($sql_about_to_expire);
+$sql_about_to_expire = "SELECT id, name, expiry_date FROM medicines WHERE expiry_date >= ? AND expiry_date <= ?";
+if ($current_branch_id) {
+  $sql_about_to_expire .= " AND branch_id = ?";
+}
+$sql_about_to_expire .= " ORDER BY expiry_date ASC";
+$stmt = $conn->prepare($sql_about_to_expire);
+if ($current_branch_id) {
+  $stmt->bind_param("ssi", $current_date, $three_months_from_now, $current_branch_id);
+} else {
+  $stmt->bind_param("ss", $current_date, $three_months_from_now);
+}
+$stmt->execute();
+$about_to_expire_products = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

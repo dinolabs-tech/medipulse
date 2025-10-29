@@ -2,6 +2,8 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
 // Add Supplier
 if (isset($_POST['add'])) {
   $name = $_POST['name'];
@@ -10,11 +12,11 @@ if (isset($_POST['add'])) {
   $email = $_POST['email'];
   $address = $_POST['address'];
 
-  $sql = "INSERT INTO suppliers (name, contact_person, phone, email, address) VALUES (?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO suppliers (name, contact_person, phone, email, address, branch_id) VALUES (?, ?, ?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("sssss", $name, $contact_person, $phone, $email, $address);
+  $stmt->bind_param("sssssi", $name, $contact_person, $phone, $email, $address, $current_branch_id);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Added supplier: $name");
+    log_action($conn, $_SESSION['user_id'], "Added supplier: $name", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error adding supplier: " . $stmt->error . "</p>";
   }
@@ -30,11 +32,11 @@ if (isset($_POST['edit'])) {
   $email = $_POST['email'];
   $address = $_POST['address'];
 
-  $sql = "UPDATE suppliers SET name=?, contact_person=?, phone=?, email=?, address=? WHERE id=?";
+  $sql = "UPDATE suppliers SET name=?, contact_person=?, phone=?, email=?, address=? WHERE id=? AND branch_id = ?";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("sssssi", $name, $contact_person, $phone, $email, $address, $id);
+  $stmt->bind_param("sssssii", $name, $contact_person, $phone, $email, $address, $id, $current_branch_id);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Edited supplier: $name (ID: $id)");
+    log_action($conn, $_SESSION['user_id'], "Edited supplier: $name (ID: $id)", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error editing supplier: " . $stmt->error . "</p>";
   }
@@ -44,19 +46,35 @@ if (isset($_POST['edit'])) {
 // Delete Supplier
 if (isset($_GET['delete'])) {
   $id = $_GET['delete'];
-  $sql_select = "SELECT name FROM suppliers WHERE id=$id";
-  $result_select = $conn->query($sql_select);
+  $sql_select = "SELECT name FROM suppliers WHERE id=? AND branch_id = ?";
+  $stmt_select = $conn->prepare($sql_select);
+  $stmt_select->bind_param("ii", $id, $current_branch_id);
+  $stmt_select->execute();
+  $result_select = $stmt_select->get_result();
   $supplier_name = $result_select->fetch_assoc()['name'];
+  $stmt_select->close();
 
-  $sql = "DELETE FROM suppliers WHERE id=$id";
-  if ($conn->query($sql) === TRUE) {
-    log_action($conn, $_SESSION['user_id'], "Deleted supplier: $supplier_name (ID: $id)");
+  $sql = "DELETE FROM suppliers WHERE id=? AND branch_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $id, $current_branch_id);
+  if ($stmt->execute()) {
+    log_action($conn, $_SESSION['user_id'], "Deleted supplier: $supplier_name (ID: $id)", $current_branch_id);
   }
+  $stmt->close();
 }
 
 // Fetch Suppliers
 $sql = "SELECT * FROM suppliers";
-$result = $conn->query($sql);
+if ($current_branch_id) {
+  $sql .= " WHERE branch_id = ?";
+}
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

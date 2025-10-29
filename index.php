@@ -5,6 +5,22 @@ if (!isset($_SESSION['user_id'])) {
   header('Location: login.php');
   exit();
 }
+
+require_once 'database/db_connection.php';
+
+// Fetch current branch name
+$current_branch_name = "N/A";
+if (isset($_SESSION['current_branch_id'])) {
+  $branch_id = $_SESSION['current_branch_id'];
+  $stmt = $conn->prepare("SELECT name FROM branches WHERE id = ?");
+  $stmt->bind_param("i", $branch_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result->num_rows > 0) {
+    $current_branch_name = $result->fetch_assoc()['name'];
+  }
+  $stmt->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,6 +42,7 @@ if (!isset($_SESSION['user_id'])) {
           <div class="card p-3">
             <div class="card-header">
               <p>Your role: <?= $_SESSION['role']; ?></p>
+              <p>Current Branch: <?= $current_branch_name; ?></p>
             </div>
             <div class="card-body">
               <h2>Welcome to the Pharmacy Management System</h2>

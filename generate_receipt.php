@@ -5,18 +5,28 @@ session_start();
 $receiptData = null;
 $patientName = "N/A";
 $saleDate = date('Y-m-d H:i:s');
+$branchName = "N/A";
+
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
 
 if (isset($_GET['invoice_number']) && !empty($_GET['invoice_number'])) {
     // Reprinting an existing receipt using invoice number
     $invoice_number = $_GET['invoice_number'];
 
-    $sql = "SELECT s.id, s.invoice_number, s.patient_id, s.quantity_sold, s.total_price, s.sale_date,
+    $sql = "SELECT s.id, s.invoice_number, s.patient_id, s.quantity_sold, s.total_price, s.sale_date, s.branch_id,
                    m.id as medicine_id, m.name as medicine_name, m.price as medicine_price
             FROM sales s
             JOIN medicines m ON s.medicine_id = m.id
             WHERE s.invoice_number = ?";
+    if ($current_branch_id) {
+        $sql .= " AND s.branch_id = ?";
+    }
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $invoice_number);
+    if ($current_branch_id) {
+        $stmt->bind_param("si", $invoice_number, $current_branch_id);
+    } else {
+        $stmt->bind_param("s", $invoice_number);
+    }
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -24,6 +34,7 @@ if (isset($_GET['invoice_number']) && !empty($_GET['invoice_number'])) {
     $total_sale_price = 0;
     $patient_id = null;
     $fetched_invoice_number = null;
+    $fetched_branch_id = null;
 
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
@@ -37,15 +48,18 @@ if (isset($_GET['invoice_number']) && !empty($_GET['invoice_number'])) {
             $patient_id = $row['patient_id'];
             $fetched_invoice_number = $row['invoice_number'];
             $saleDate = $row['sale_date']; // Use actual sale date from DB
+            $fetched_branch_id = $row['branch_id'];
         }
-        $receiptData = ['invoice_number' => $fetched_invoice_number, 'items' => $receipt_items, 'total' => $total_sale_price, 'patient_id' => $patient_id];
+        $receiptData = ['invoice_number' => $fetched_invoice_number, 'items' => $receipt_items, 'total' => $total_sale_price, 'patient_id' => $patient_id, 'branch_id' => $fetched_branch_id];
     } else {
         echo "<p style='color:red;'>Error: Receipt not found for invoice number: " . htmlspecialchars($invoice_number) . "</p>";
         exit();
     }
+    $stmt->close();
 } elseif (isset($_SESSION['print_receipt']) && $_SESSION['print_receipt'] === true && isset($_SESSION['last_receipt'])) {
     // New sale, retrieve from session
     $receiptData = $_SESSION['last_receipt'];
+    $receiptData['branch_id'] = $current_branch_id; // Add current branch ID to receipt data
     // Clear session variables immediately after fetching them for printing
     unset($_SESSION['last_receipt']);
     unset($_SESSION['print_receipt']);
@@ -56,10 +70,26 @@ if (isset($_GET['invoice_number']) && !empty($_GET['invoice_number'])) {
 }
 
 if ($receiptData['patient_id']) {
-    $sql = "SELECT first_name, last_name FROM patients WHERE id=" . $receiptData['patient_id'];
-    $res = $conn->query($sql)->fetch_assoc();
+    $sql = "SELECT first_name, last_name FROM patients WHERE id=? AND branch_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $receiptData['patient_id'], $receiptData['branch_id']);
+    $stmt->execute();
+    $res = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
     if ($res) {
         $patientName = $res['first_name'] . ' ' . $res['last_name'];
+    }
+}
+
+if ($receiptData['branch_id']) {
+    $sql = "SELECT name FROM branches WHERE id=?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $receiptData['branch_id']);
+    $stmt->execute();
+    $res = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if ($res) {
+        $branchName = $res['name'];
     }
 }
 ?>

@@ -2,18 +2,58 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
+// Prepare WHERE clause for branch filtering
+$branch_filter = $current_branch_id ? " WHERE branch_id = ?" : "";
+$branch_filter_join = $current_branch_id ? " AND t.branch_id = ?" : ""; // For joined tables
+
 // Fetch products for dropdown (expired, low stock, out of stock)
 $current_date = date('Y-m-d');
 $low_stock_threshold = 10; // Define your low stock threshold
 
-$expired_products_sql = "SELECT id, name, expiry_date FROM medicines WHERE expiry_date < '$current_date' ORDER BY name ASC";
-$expired_products_result = $conn->query($expired_products_sql);
+$expired_products_sql = "SELECT id, name, expiry_date FROM medicines WHERE expiry_date < ?";
+if ($current_branch_id) {
+  $expired_products_sql .= " AND branch_id = ?";
+}
+$expired_products_sql .= " ORDER BY name ASC";
+$stmt_expired = $conn->prepare($expired_products_sql);
+if ($current_branch_id) {
+  $stmt_expired->bind_param("si", $current_date, $current_branch_id);
+} else {
+  $stmt_expired->bind_param("s", $current_date);
+}
+$stmt_expired->execute();
+$expired_products_result = $stmt_expired->get_result();
+$stmt_expired->close();
 
-$out_of_stock_products_sql = "SELECT id, name, quantity FROM medicines WHERE quantity = 0 ORDER BY name ASC";
-$out_of_stock_products_result = $conn->query($out_of_stock_products_sql);
+$out_of_stock_products_sql = "SELECT id, name, quantity FROM medicines WHERE quantity = 0";
+if ($current_branch_id) {
+  $out_of_stock_products_sql .= " AND branch_id = ?";
+}
+$out_of_stock_products_sql .= " ORDER BY name ASC";
+$stmt_out_of_stock = $conn->prepare($out_of_stock_products_sql);
+if ($current_branch_id) {
+  $stmt_out_of_stock->bind_param("i", $current_branch_id);
+}
+$stmt_out_of_stock->execute();
+$out_of_stock_products_result = $stmt_out_of_stock->get_result();
+$stmt_out_of_stock->close();
 
-$low_stock_products_sql = "SELECT id, name, quantity FROM medicines WHERE quantity > 0 AND quantity <= $low_stock_threshold ORDER BY name ASC";
-$low_stock_products_result = $conn->query($low_stock_products_sql);
+$low_stock_products_sql = "SELECT id, name, quantity FROM medicines WHERE quantity > 0 AND quantity <= ?";
+if ($current_branch_id) {
+  $low_stock_products_sql .= " AND branch_id = ?";
+}
+$low_stock_products_sql .= " ORDER BY name ASC";
+$stmt_low_stock = $conn->prepare($low_stock_products_sql);
+if ($current_branch_id) {
+  $stmt_low_stock->bind_param("ii", $low_stock_threshold, $current_branch_id);
+} else {
+  $stmt_low_stock->bind_param("i", $low_stock_threshold);
+}
+$stmt_low_stock->execute();
+$low_stock_products_result = $stmt_low_stock->get_result();
+$stmt_low_stock->close();
 
 // Add Purchase Order
 if (isset($_POST['add'])) {
@@ -25,17 +65,17 @@ if (isset($_POST['add'])) {
   $total_amount = $_POST['total_amount'];
 
   if ($product_id) {
-    $sql = "INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, product_id, status, total_amount) VALUES (?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, product_id, status, total_amount, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("issssd", $supplier_id, $order_date, $expected_delivery_date, $product_id, $status, $total_amount);
+    $stmt->bind_param("isssdsi", $supplier_id, $order_date, $expected_delivery_date, $product_id, $status, $total_amount, $current_branch_id);
   } else {
-    $sql = "INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, status, total_amount) VALUES (?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, status, total_amount, branch_id) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("isssd", $supplier_id, $order_date, $expected_delivery_date, $status, $total_amount);
+    $stmt->bind_param("isssdi", $supplier_id, $order_date, $expected_delivery_date, $status, $total_amount, $current_branch_id);
   }
 
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Added purchase order for supplier ID: $supplier_id, total: $total_amount");
+    log_action($conn, $_SESSION['user_id'], "Added purchase order for supplier ID: $supplier_id, total: $total_amount", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error adding purchase order: " . $stmt->error . "</p>";
   }
@@ -53,18 +93,18 @@ if (isset($_POST['edit'])) {
   $total_amount = $_POST['total_amount'];
 
   if ($product_id) {
-    $sql = "UPDATE purchase_orders SET supplier_id=?, order_date=?, expected_delivery_date=?, product_id=?, status=?, total_amount=? WHERE id=?";
+    $sql = "UPDATE purchase_orders SET supplier_id=?, order_date=?, expected_delivery_date=?, product_id=?, status=?, total_amount=? WHERE id=? AND branch_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("isssssi", $supplier_id, $order_date, $expected_delivery_date, $product_id, $status, $total_amount, $id);
+    $stmt->bind_param("isssssii", $supplier_id, $order_date, $expected_delivery_date, $product_id, $status, $total_amount, $id, $current_branch_id);
   } else {
-    $sql = "UPDATE purchase_orders SET supplier_id=?, order_date=?, expected_delivery_date=?, product_id=?, status=?, total_amount=? WHERE id=?";
+    $sql = "UPDATE purchase_orders SET supplier_id=?, order_date=?, expected_delivery_date=?, product_id=?, status=?, total_amount=? WHERE id=? AND branch_id = ?";
     $stmt = $conn->prepare($sql);
     $null_product_id = NULL; // Explicitly set to NULL for binding
-    $stmt->bind_param("issssii", $supplier_id, $order_date, $expected_delivery_date, $null_product_id, $status, $total_amount, $id);
+    $stmt->bind_param("issssiii", $supplier_id, $order_date, $expected_delivery_date, $null_product_id, $status, $total_amount, $id, $current_branch_id);
   }
 
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Edited purchase order ID: $id (Supplier ID: $supplier_id, Total: $total_amount)");
+    log_action($conn, $_SESSION['user_id'], "Edited purchase order ID: $id (Supplier ID: $supplier_id, Total: $total_amount)", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error editing purchase order: " . $stmt->error . "</p>";
   }
@@ -74,25 +114,51 @@ if (isset($_POST['edit'])) {
 // Delete Purchase Order
 if (isset($_GET['delete'])) {
   $id = $_GET['delete'];
-  $sql_select = "SELECT supplier_id, total_amount FROM purchase_orders WHERE id=$id";
-  $result_select = $conn->query($sql_select);
+  $sql_select = "SELECT supplier_id, total_amount FROM purchase_orders WHERE id=? AND branch_id = ?";
+  $stmt_select = $conn->prepare($sql_select);
+  $stmt_select->bind_param("ii", $id, $current_branch_id);
+  $stmt_select->execute();
+  $result_select = $stmt_select->get_result();
   $po_details = $result_select->fetch_assoc();
   $supplier_id = $po_details['supplier_id'];
   $total_amount = $po_details['total_amount'];
+  $stmt_select->close();
 
-  $sql = "DELETE FROM purchase_orders WHERE id=$id";
-  if ($conn->query($sql) === TRUE) {
-    log_action($conn, $_SESSION['user_id'], "Deleted purchase order ID: $id (Supplier ID: $supplier_id, Total: $total_amount)");
+  $sql = "DELETE FROM purchase_orders WHERE id=? AND branch_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $id, $current_branch_id);
+  if ($stmt->execute()) {
+    log_action($conn, $_SESSION['user_id'], "Deleted purchase order ID: $id (Supplier ID: $supplier_id, Total: $total_amount)", $current_branch_id);
   }
+  $stmt->close();
 }
 
 // Fetch Purchase Orders
-$sql = "SELECT po.*, s.name as supplier_name, m.name as product_name FROM purchase_orders po JOIN suppliers s ON po.supplier_id = s.id LEFT JOIN medicines m ON po.product_id = m.id ORDER BY po.order_date DESC";
-$po_result = $conn->query($sql);
+$sql = "SELECT po.*, s.name as supplier_name, m.name as product_name FROM purchase_orders po JOIN suppliers s ON po.supplier_id = s.id LEFT JOIN medicines m ON po.product_id = m.id";
+if ($current_branch_id) {
+  $sql .= " WHERE po.branch_id = ?";
+}
+$sql .= " ORDER BY po.order_date DESC";
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$po_result = $stmt->get_result();
+$stmt->close();
 
 // Fetch Suppliers for dropdown
 $sql = "SELECT id, name FROM suppliers";
-$suppliers_result = $conn->query($sql);
+if ($current_branch_id) {
+  $sql .= " WHERE branch_id = ?";
+}
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$suppliers_result = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

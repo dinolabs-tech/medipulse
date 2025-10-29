@@ -2,6 +2,8 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
 // Handle AJAX request to clear print session variables
 if (isset($_POST['clear_print_session']) && $_POST['clear_print_session'] === 'true') {
     unset($_SESSION['last_receipt']);
@@ -19,9 +21,13 @@ if (isset($_POST['add_to_cart'])) {
     $medicine_id = $_POST['medicine_id'];
     $quantity_to_add = $_POST['quantity_to_add'];
 
-    $sql = "SELECT id, name, price, quantity, expiry_date, profit_per_unit FROM medicines WHERE id=$medicine_id";
-    $result = $conn->query($sql);
+    $sql = "SELECT id, name, price, quantity, expiry_date, profit_per_unit FROM medicines WHERE id=? AND branch_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $medicine_id, $current_branch_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
     $medicine = $result->fetch_assoc();
+    $stmt->close();
 
     if ($medicine) {
         $current_date = date('Y-m-d');
@@ -45,7 +51,7 @@ if (isset($_POST['add_to_cart'])) {
                         'profit_per_unit' => $medicine['profit_per_unit']
                     ];
                 }
-                log_action($conn, $_SESSION['user_id'], "Added " . $quantity_to_add . " of " . $medicine['name'] . " to cart.");
+                log_action($conn, $_SESSION['user_id'], "Added " . $quantity_to_add . " of " . $medicine['name'] . " to cart.", $current_branch_id);
             }
         }
     }
@@ -58,17 +64,21 @@ if (isset($_POST['update_cart_item'])) {
 
     if ($new_quantity <= 0) {
         unset($_SESSION['cart'][$medicine_id]);
-        log_action($conn, $_SESSION['user_id'], "Removed item from cart (ID: $medicine_id).");
+        log_action($conn, $_SESSION['user_id'], "Removed item from cart (ID: $medicine_id).", $current_branch_id);
     } else {
-        $sql = "SELECT quantity FROM medicines WHERE id=$medicine_id";
-        $result = $conn->query($sql);
+        $sql = "SELECT quantity FROM medicines WHERE id=? AND branch_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ii", $medicine_id, $current_branch_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         $medicine_stock = $result->fetch_assoc()['quantity'];
+        $stmt->close();
 
         if ($new_quantity > $medicine_stock) {
             echo "<p style='color:red;'>Error: Not enough stock available. Available: " . $medicine_stock . "</p>";
         } else {
             $_SESSION['cart'][$medicine_id]['quantity'] = $new_quantity;
-            log_action($conn, $_SESSION['user_id'], "Updated quantity of item (ID: $medicine_id) in cart to $new_quantity.");
+            log_action($conn, $_SESSION['user_id'], "Updated quantity of item (ID: $medicine_id) in cart to $new_quantity.", $current_branch_id);
         }
     }
 }
@@ -79,19 +89,19 @@ if (isset($_GET['remove_from_cart'])) {
     if (isset($_SESSION['cart'][$medicine_id])) {
         $medicine_name = $_SESSION['cart'][$medicine_id]['name'];
         unset($_SESSION['cart'][$medicine_id]);
-        log_action($conn, $_SESSION['user_id'], "Removed " . $medicine_name . " from cart.");
+        log_action($conn, $_SESSION['user_id'], "Removed " . $medicine_name . " from cart.", $current_branch_id);
     }
 }
 
 // Function to generate a unique invoice number
-function generateUniqueInvoiceNumber($conn) {
+function generateUniqueInvoiceNumber($conn, $branch_id) {
     $invoice_number = '';
     $is_unique = false;
     while (!$is_unique) {
         $invoice_number = 'INV-' . date('Ymd') . '-' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
-        $sql = "SELECT id FROM sales WHERE invoice_number = ?";
+        $sql = "SELECT id FROM sales WHERE invoice_number = ? AND branch_id = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("s", $invoice_number);
+        $stmt->bind_param("si", $invoice_number, $branch_id);
         $stmt->execute();
         $stmt->store_result();
         if ($stmt->num_rows == 0) {
@@ -113,11 +123,15 @@ if (isset($_POST['checkout'])) {
     $receipt_items = [];
 
     foreach ($_SESSION['cart'] as $item_id => $item) {
-        $sql = "SELECT quantity, expiry_date FROM medicines WHERE id=" . $item['id'];
-        $result = $conn->query($sql);
+        $sql = "SELECT quantity, expiry_date FROM medicines WHERE id=? AND branch_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ii", $item['id'], $current_branch_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         $medicine_data = $result->fetch_assoc();
         $medicine_stock = $medicine_data['quantity'];
         $medicine_expiry_date = $medicine_data['expiry_date'];
+        $stmt->close();
 
         $current_date = date('Y-m-d');
         if ($medicine_expiry_date < $current_date) {
@@ -134,7 +148,7 @@ if (isset($_POST['checkout'])) {
     }
 
     if ($sale_successful) {
-        $invoice_number = generateUniqueInvoiceNumber($conn);
+        $invoice_number = generateUniqueInvoiceNumber($conn, $current_branch_id);
         $user_id = $_SESSION['user_id'];
 
         foreach ($_SESSION['cart'] as $item_id => $item) {
@@ -143,21 +157,23 @@ if (isset($_POST['checkout'])) {
             $total_sale_price += $total_item_price;
 
             // Insert into sales
-            $sql = "INSERT INTO sales (invoice_number, patient_id, medicine_id, quantity_sold, total_price, profit, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO sales (invoice_number, patient_id, medicine_id, quantity_sold, total_price, profit, user_id, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("siiiddd", $invoice_number, $patient_id, $item['id'], $item['quantity'], $total_item_price, $profit_per_item, $user_id);
+            $stmt->bind_param("siiidddi", $invoice_number, $patient_id, $item['id'], $item['quantity'], $total_item_price, $profit_per_item, $user_id, $current_branch_id);
             $stmt->execute();
+            $stmt->close();
 
             // Update medicine quantity
-            $new_quantity = $medicine_stock - $item['quantity'];
-            $sql = "UPDATE medicines SET quantity=? WHERE id=?";
+            $sql = "UPDATE medicines SET quantity=? WHERE id=? AND branch_id = ?";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ii", $new_quantity, $item['id']);
+            $new_quantity = $medicine_stock - $item['quantity'];
+            $stmt->bind_param("iii", $new_quantity, $item['id'], $current_branch_id);
             $stmt->execute();
+            $stmt->close();
 
             $receipt_items[] = $item;
         }
-        log_action($conn, $_SESSION['user_id'], "Completed sale with Invoice No: " . $invoice_number . " for patient ID: " . ($patient_id ?? 'N/A') . ", total: $total_sale_price");
+        log_action($conn, $_SESSION['user_id'], "Completed sale with Invoice No: " . $invoice_number . " for patient ID: " . ($patient_id ?? 'N/A') . ", total: $total_sale_price", $current_branch_id);
         $_SESSION['last_receipt'] = ['invoice_number' => $invoice_number, 'items' => $receipt_items, 'total' => $total_sale_price, 'patient_id' => $patient_id];
         $_SESSION['cart'] = []; // Clear cart after successful checkout
         $_SESSION['print_receipt'] = true; // Set flag to trigger print
@@ -166,12 +182,34 @@ if (isset($_POST['checkout'])) {
 
 // Fetch Medicines for dropdown
 $current_date = date('Y-m-d');
-$sql = "SELECT id, name, price, quantity, expiry_date FROM medicines WHERE quantity > 0 AND expiry_date >= '$current_date' ORDER BY name ASC";
-$medicines_result = $conn->query($sql);
+$sql = "SELECT id, name, price, quantity, expiry_date FROM medicines WHERE quantity > 0 AND expiry_date >= ?";
+if ($current_branch_id) {
+  $sql .= " AND branch_id = ?";
+}
+$sql .= " ORDER BY name ASC";
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("si", $current_date, $current_branch_id);
+} else {
+  $stmt->bind_param("s", $current_date);
+}
+$stmt->execute();
+$medicines_result = $stmt->get_result();
+$stmt->close();
 
 // Fetch Patients for dropdown
-$sql = "SELECT id, first_name, last_name FROM patients ORDER BY first_name ASC";
-$patients_result = $conn->query($sql);
+$sql = "SELECT id, first_name, last_name FROM patients";
+if ($current_branch_id) {
+  $sql .= " WHERE branch_id = ?";
+}
+$sql .= " ORDER BY first_name ASC";
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$patients_result = $stmt->get_result();
+$stmt->close();
 
 ?>
 

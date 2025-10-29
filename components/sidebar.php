@@ -126,6 +126,24 @@ if (!isset($_SESSION['user_id'])) {
             </a>
           </li>
           <li class="nav-item">
+            <a href="branches.php">
+              <i class="fas fa-code-branch"></i>
+              <p>Branches</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="states.php">
+              <i class="fas fa-map-marker-alt"></i>
+              <p>States</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="countries.php">
+              <i class="fas fa-globe-americas"></i>
+              <p>Countries</p>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="logs.php">
               <i class="fas fa-desktop"></i>
               <p>Logs</p>

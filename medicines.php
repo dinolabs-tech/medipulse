@@ -2,6 +2,8 @@
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 
+$current_branch_id = $_SESSION['current_branch_id'] ?? null;
+
 // Add Medicine
 if (isset($_POST['add'])) {
   $name = $_POST['name'];
@@ -13,11 +15,11 @@ if (isset($_POST['add'])) {
   $expiry_date = $_POST['expiry_date'];
   $profit_per_unit = $price - $cost_price;
 
-  $sql = "INSERT INTO medicines (name, description, quantity, price, cost_price, profit_per_unit, batch_number, expiry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO medicines (name, description, quantity, price, cost_price, profit_per_unit, batch_number, expiry_date, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("ssidddss", $name, $description, $quantity, $price, $cost_price, $profit_per_unit, $batch_number, $expiry_date);
+  $stmt->bind_param("ssidddssi", $name, $description, $quantity, $price, $cost_price, $profit_per_unit, $batch_number, $expiry_date, $current_branch_id);
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Added medicine: $name");
+    log_action($conn, $_SESSION['user_id'], "Added medicine: $name", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error adding medicine: " . $stmt->error . "</p>";
   }
@@ -38,7 +40,7 @@ if (isset($_POST['edit'])) {
 
   $sql = "UPDATE medicines 
             SET name = ?, description = ?, quantity = ?, price = ?, cost_price = ?, profit_per_unit = ?, batch_number = ?, expiry_date = ? 
-            WHERE id = ?";
+            WHERE id = ? AND branch_id = ?";
 
   $stmt = $conn->prepare($sql);
   if ($stmt === false) {
@@ -46,7 +48,7 @@ if (isset($_POST['edit'])) {
   }
 
   $stmt->bind_param(
-    "ssidddssi",
+    "ssidddssii",
     $name,
     $description,
     $quantity,
@@ -55,11 +57,12 @@ if (isset($_POST['edit'])) {
     $profit_per_unit,
     $batch_number,
     $expiry_date,
-    $id
+    $id,
+    $current_branch_id
   );
 
   if ($stmt->execute()) {
-    log_action($conn, $_SESSION['user_id'], "Edited medicine: $name (ID: $id)");
+    log_action($conn, $_SESSION['user_id'], "Edited medicine: $name (ID: $id)", $current_branch_id);
   } else {
     echo "<p style='color:red;'>Error editing medicine: " . $stmt->error . "</p>";
   }
@@ -71,19 +74,35 @@ if (isset($_POST['edit'])) {
 // Delete Medicine
 if (isset($_GET['delete'])) {
   $id = $_GET['delete'];
-  $sql_select = "SELECT name FROM medicines WHERE id=$id";
-  $result_select = $conn->query($sql_select);
+  $sql_select = "SELECT name FROM medicines WHERE id=? AND branch_id = ?";
+  $stmt_select = $conn->prepare($sql_select);
+  $stmt_select->bind_param("ii", $id, $current_branch_id);
+  $stmt_select->execute();
+  $result_select = $stmt_select->get_result();
   $medicine_name = $result_select->fetch_assoc()['name'];
+  $stmt_select->close();
 
-  $sql = "DELETE FROM medicines WHERE id=$id";
-  if ($conn->query($sql) === TRUE) {
-    log_action($conn, $_SESSION['user_id'], "Deleted medicine: $medicine_name (ID: $id)");
+  $sql = "DELETE FROM medicines WHERE id=? AND branch_id = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $id, $current_branch_id);
+  if ($stmt->execute()) {
+    log_action($conn, $_SESSION['user_id'], "Deleted medicine: $medicine_name (ID: $id)", $current_branch_id);
   }
+  $stmt->close();
 }
 
 // Fetch Medicines
 $sql = "SELECT * FROM medicines";
-$result = $conn->query($sql);
+if ($current_branch_id) {
+  $sql .= " WHERE branch_id = ?";
+}
+$stmt = $conn->prepare($sql);
+if ($current_branch_id) {
+  $stmt->bind_param("i", $current_branch_id);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
