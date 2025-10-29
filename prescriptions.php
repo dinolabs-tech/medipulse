@@ -73,12 +73,12 @@ if (isset($_GET['delete'])) {
 
 // Fetch Prescriptions
 $sql = "SELECT pr.*, p.first_name, p.last_name, m.name as medicine_name FROM prescriptions pr JOIN patients p ON pr.patient_id = p.id JOIN medicines m ON pr.medicine_id = m.id";
-if ($current_branch_id) {
+if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
   $sql .= " WHERE pr.branch_id = ?";
 }
 $sql .= " ORDER BY pr.prescription_date DESC";
 $stmt = $conn->prepare($sql);
-if ($current_branch_id) {
+if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
   $stmt->bind_param("i", $current_branch_id);
 }
 $stmt->execute();
@@ -87,11 +87,11 @@ $stmt->close();
 
 // Fetch Patients for dropdown
 $sql = "SELECT id, first_name, last_name FROM patients";
-if ($current_branch_id) {
+if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
   $sql .= " WHERE branch_id = ?";
 }
 $stmt = $conn->prepare($sql);
-if ($current_branch_id) {
+if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
   $stmt->bind_param("i", $current_branch_id);
 }
 $stmt->execute();
@@ -100,11 +100,11 @@ $stmt->close();
 
 // Fetch Medicines for dropdown
 $sql = "SELECT id, name FROM medicines";
-if ($current_branch_id) {
+if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
   $sql .= " WHERE branch_id = ?";
 }
 $stmt = $conn->prepare($sql);
-if ($current_branch_id) {
+if ($current_branch_id && $_SESSION['role'] != 'superuser' && $_SESSION['role'] != 'admin') {
   $stmt->bind_param("i", $current_branch_id);
 }
 $stmt->execute();
