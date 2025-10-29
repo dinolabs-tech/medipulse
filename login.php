@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once 'components/functions.php';
 require_once 'database/db_connection.php';
 require_once 'database/database_schema.php';
