@@ -43,6 +43,13 @@ if (isset($_SESSION['current_branch_id'])) {
             <div class="card-header">
               <p>Your role: <?= $_SESSION['role']; ?></p>
               <p>Current Branch: <?= $current_branch_name; ?></p>
+
+              <?php if ($_SESSION['role'] == 'Superuser') { ?>
+                <div class="ms-md-auto py-2 py-md-0">
+                  <a href="developer.php" class="btn btn-danger btn-round me-2"><i class="fas fa-code"></i> &nbsp; Developer Tools</a>
+                  <!-- <a href="#" class="btn btn-primary btn-round">Add Customer</a> -->
+                </div>
+              <?php } ?>
             </div>
             <div class="card-body">
               <h2>Welcome to the Pharmacy Management System</h2>
