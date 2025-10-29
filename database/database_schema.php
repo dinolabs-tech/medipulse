@@ -121,8 +121,7 @@ $schema = [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
         'name' => 'VARCHAR(255) NOT NULL',
         'country_id' => 'INT(6) UNSIGNED NOT NULL',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (country_id) REFERENCES countries(id) ON DELETE CASCADE'
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ],
     'branches' => [
         'id' => 'INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY',
@@ -131,8 +130,7 @@ $schema = [
         'phone' => 'VARCHAR(20)',
         'email' => 'VARCHAR(100)',
         'state_id' => 'INT(6) UNSIGNED NOT NULL',
-        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        'FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE CASCADE'
+        'created_at' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ]
 ];
 
@@ -151,28 +149,5 @@ foreach ($schema as $tableName => $columns) {
     createTable($conn, $tableName, $columns);
 }
 
-// Add foreign key constraints for branch_id after tables are created
-$foreign_keys = [
-    'users' => 'ALTER TABLE `users` ADD CONSTRAINT `fk_users_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL;',
-    'patients' => 'ALTER TABLE `patients` ADD CONSTRAINT `fk_patients_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL;',
-    'medicines' => 'ALTER TABLE `medicines` ADD CONSTRAINT `fk_medicines_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL;',
-    'suppliers' => 'ALTER TABLE `suppliers` ADD CONSTRAINT `fk_suppliers_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL;',
-    'sales' => 'ALTER TABLE `sales` ADD CONSTRAINT `fk_sales_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL;',
-    'prescriptions' => 'ALTER TABLE `prescriptions` ADD CONSTRAINT `fk_prescriptions_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL;',
-    'purchase_orders' => 'ALTER TABLE `purchase_orders` ADD CONSTRAINT `fk_purchase_orders_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL;',
-    'logs' => 'ALTER TABLE `logs` ADD CONSTRAINT `fk_logs_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE SET NULL;'
-];
-
-foreach ($foreign_keys as $tableName => $sql) {
-    if ($conn->query($sql) === TRUE) {
-        // echo "✅ Foreign key for '$tableName' added successfully.<br>";
-    } else {
-        // Check if the foreign key already exists to avoid errors on re-run
-        if (strpos($conn->error, 'Duplicate foreign key constraint name') === false && strpos($conn->error, 'Can\'t create table') === false) {
-            echo "❌ Error adding foreign key for '$tableName': " . $conn->error . "<br>";
-            error_log("Error adding foreign key for '$tableName': " . $conn->error);
-        }
-    }
-}
 
 ?>
